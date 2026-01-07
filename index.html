@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lucas的忘忧斋</title>
+    <link rel="icon" href="https://pic1.imgdb.cn/item/68fe309a3203f7be00a0c198.png" type="image/png">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="https://chinese-fonts-cdn.deno.dev/packages/lywkpmydb/dist/LXGWWenKaiScreen/result.css">
+    <script src="https://cn.vercount.one/js" async></script>
+
+    <style>
+        :root {
+            --accent-color: #64ffda;
+            --glass-bg: rgba(20, 20, 20, 0.65);
+            --border: 1px solid rgba(255, 255, 255, 0.1);
+            --trans-fast: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        /* 全局布局 */
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        
+        body {
+            font-family: 'LXGW WenKai Screen', sans-serif;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column; /* 改为纵向布局以容纳页脚 */
+            justify-content: center;
+            align-items: center;
+            padding: 40px 20px;
+            background: url('https://pic1.imgdb.cn/item/6943a7742ee916d1a3aee235.webp') center/cover no-repeat fixed;
+            color: white;
+            overflow-x: hidden;
+        }
+
+        body::before {
+            content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.4); z-index: -1;
+        }
+
+        .dashboard {
+            display: flex;
+            gap: 24px;
+            width: 100%;
+            max-width: 1000px;
+            flex-wrap: wrap;
+            align-items: stretch;
+            margin-top: 60px;
+            margin-bottom: 30px; /* 为页脚留出空间 */
+        }
+
+        .col-left { flex: 1; min-width: 320px; display: flex; flex-direction: column; gap: 20px; }
+        .col-right { flex: 1.4; min-width: 320px; display: flex; flex-direction: column; gap: 20px; }
+
+        /* 通用卡片 */
+        .glass-card {
+            background: var(--glass-bg);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: var(--border);
+            border-radius: 24px;
+            padding: 30px;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.3);
+            width: 100%;
+        }
+
+        /* 个人信息 */
+        .profile { text-align: center; width: 100%; }
+        .avatar { 
+            width: 110px; height: 110px; border-radius: 50%; 
+            border: 3px solid var(--accent-color); margin-bottom: 20px;
+            transition: var(--trans-fast);
+        }
+        .avatar:hover { transform: rotate(360deg); }
+        .name { font-size: 1.8rem; margin-bottom: 10px; font-weight: bold; }
+        .bio { font-size: 0.95rem; color: #ccc; line-height: 1.6; margin-bottom: 20px; }
+
+        /* 社交账号 */
+        .social-links { display: flex; justify-content: center; gap: 12px; margin-top: 10px; }
+        .social-item {
+            width: 38px; height: 38px; display: flex; align-items: center; justify-content: center;
+            border-radius: 10px; background: rgba(255, 255, 255, 0.05); border: var(--border);
+            color: rgba(255, 255, 255, 0.7); text-decoration: none; font-size: 1.1rem;
+            transition: var(--trans-fast);
+        }
+        .social-item:hover {
+            background: rgba(100, 255, 218, 0.1); color: var(--accent-color);
+            border-color: var(--accent-color); transform: translateY(-3px);
+        }
+
+        /* 监控条 */
+        .stat-header { display: flex; align-items: center; gap: 10px; margin-bottom: 15px; font-size: 0.9rem; font-weight: bold; }
+        .status-dot { width: 8px; height: 8px; border-radius: 50%; background: #00ff88; box-shadow: 0 0 10px #00ff88; }
+        .progress-item { margin-bottom: 15px; }
+        .progress-label { display: flex; justify-content: space-between; font-size: 0.8rem; margin-bottom: 6px; color: #ddd; }
+        .progress-bg { background: rgba(255,255,255,0.1); height: 8px; border-radius: 4px; overflow: hidden; }
+        .progress-bar { height: 100%; width: 0%; background: linear-gradient(90deg, var(--accent-color), #4facfe); transition: width 1s ease; }
+
+        /* 快捷入口 */
+        .link-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(90px, 1fr)); gap: 12px; }
+        .grid-item {
+            display: flex; flex-direction: column; align-items: center;
+            padding: 15px 5px; background: rgba(255,255,255,0.05);
+            border-radius: 16px; text-decoration: none; color: white;
+            border: 1px solid transparent; transition: var(--trans-fast);
+        }
+        .grid-item:hover {
+            background: rgba(255,255,255,0.1); border-color: var(--accent-color); transform: translateY(-5px);
+        }
+        .grid-icon { width: 32px; height: 32px; margin-bottom: 8px; border-radius: 6px; }
+        .grid-item span { font-size: 0.75rem; }
+
+        /* 一言 */
+        .hitokoto-text { font-size: 0.95rem; font-style: italic; line-height: 1.6; color: #eee; min-height: 3em; }
+        .small-widgets { display: flex; gap: 15px; margin-top: 15px; padding-top: 15px; border-top: 1px solid rgba(255,255,255,0.1); }
+        .widget-box { flex: 1; text-align: center; }
+        .widget-val { font-size: 1.1rem; font-weight: bold; display: block; }
+        .widget-label { font-size: 0.65rem; color: #888; text-transform: uppercase; letter-spacing: 1px; }
+
+        /* 页脚样式 */
+        .footer {
+            width: 100%;
+            max-width: 1000px;
+            text-align: center;
+            padding: 25px;
+            font-size: 0.85rem;
+            color: rgba(255, 255, 255, 0.6);
+            margin-top: auto;
+        }
+        .badge-list {
+            display: flex;
+            justify-content: center;
+            gap: 6px;
+            flex-wrap: wrap;
+            margin-top: 12px;
+            opacity: 0.8;
+        }
+        .badge-list img { height: 20px; }
+
+        @media (max-width: 768px) {
+            .dashboard { flex-direction: column; }
+            body { padding: 20px 10px; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="dashboard">
+        <div class="col-left">
+            <div class="glass-card">
+                <div class="profile">
+                    <img src="https://pic1.imgdb.cn/item/68fe309a3203f7be00a0c198.png" class="avatar" alt="Avatar">
+                    <h2 class="name">LucasAndrew</h2>
+                    <p class="bio"><br>南风知我意，吹梦到西洲</p>
+                    <div class="social-links">
+                        <a href="https://github.com/lucasandrew0120" target="_blank" class="social-item" title="GitHub"><i class="fab fa-github"></i></a>
+                        <a href="mailto:LucasAndrew0120@outlook.com" class="social-item" title="Email"><i class="fas fa-envelope"></i></a>
+                    </div>
+                </div>
+            </div>
+
+            <div class="glass-card">
+                <div id="hitokoto_text" class="hitokoto-text">正在摘取星辰...</div>
+                <div class="small-widgets">
+                    <div class="widget-box">
+                        <span id="busuanzi_value_site_pv" class="widget-val">1</span>
+                        <span class="widget-label">访客 PV</span>
+                    </div>
+                    <div class="widget-box">
+                        <span id="temp-val" class="widget-val">--</span>
+                        <span id="loc-val" class="widget-label">城市</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-right">
+            <div class="glass-card">
+                <div class="stat-header">
+                    <div class="status-dot"></div>
+                    <span>系统监控 (Real-time Status)</span>
+                </div>
+                <div class="progress-item">
+                    <div class="progress-label"><span>CPU 负载</span> <span id="cpu-val">0%</span></div>
+                    <div class="progress-bg"><div class="progress-bar" id="cpu-bar"></div></div>
+                </div>
+                <div class="progress-item">
+                    <div class="progress-label"><span>内存使用</span> <span id="ram-val">0%</span></div>
+                    <div class="progress-bg"><div class="progress-bar" id="ram-bar" style="background: linear-gradient(90deg, #fce38a, #f38181);"></div></div>
+                </div>
+                <div class="progress-item">
+                    <div class="progress-label"><span>磁盘空间</span> <span id="disk-val">0%</span></div>
+                    <div class="progress-bg"><div class="progress-bar" id="disk-bar" style="background: linear-gradient(90deg, #a8edea, #fed6e3);"></div></div>
+                </div>
+                <div class="progress-item">
+                    <div class="progress-label"><span>续费倒计时</span> <span id="days-val">-- 天</span></div>
+                    <div class="progress-bg"><div class="progress-bar" id="days-bar"></div></div>
+                </div>
+                <div style="display: flex; justify-content: space-between; font-size: 0.7rem; color: #888; margin-top: 5px;">
+                    <span><i class="fas fa-download"></i> <span id="net-in">0</span> KB/s</span>
+                    <span id="uptime-val">UPTIME: LOADING</span>
+                    <span><i class="fas fa-upload"></i> <span id="net-out">0</span> KB/s</span>
+                </div>
+            </div>
+
+            <div class="glass-card">
+                <div class="stat-header">快捷入口 / Shortcuts</div>
+                <div class="link-grid">
+                    <a href="https://blog.lris625.top/" target="_blank" class="grid-item">
+                        <img src="https://pic1.imgdb.cn/item/68fe309a3203f7be00a0c198.png" class="grid-icon">
+                        <span>个人博客</span>
+                    </a>
+                    <a href="https://openlist.lris625.top/" target="_blank" class="grid-item">
+                        <img src="https://res.oplist.org/logo/logo.svg" class="grid-icon">
+                        <span>OpenList</span>
+                    </a>
+                    <a href="https://speed.lris625.top/" target="_blank" class="grid-item">
+                        <img src="https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/svg/librespeed.svg" class="grid-icon">
+                        <span>LibreSpeed</span>
+                    </a>
+                    <a href="https://ech0.lris625.top/" target="_blank" class="grid-item">
+                        <img src="https://pic1.imgdb.cn/item/695a8afca6ed793b783b6427.webp" class="grid-icon">
+                        <span>碎碎念</span>
+                    </a>
+                    <a href="https://read.lris625.top/" target="_blank" class="grid-item">
+                        <img src="https://favicon.im/read.lris625.top" class="grid-icon">
+                        <span>阅读</span>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <footer class="footer glass-card">
+        <div style="margin-bottom: 10px;">
+            © 2026 LucasAndrew · <span id="runtime-val">载入中...</span>
+        </div>
+        
+        <div class="badge-list">
+            <img src="https://img.shields.io/badge/Server-1Panel-orange?style=flat-square" alt="1Panel">
+            <img src="https://img.shields.io/badge/Web-OpenResty-009900?style=flat-square&logo=nginx" alt="OpenResty">
+            
+            <img src="https://img.shields.io/badge/Crafted%20with-Gemini%20AI-4285f4?style=flat-square&logo=google-gemini&logoColor=white" alt="Gemini AI">
+            
+            <img src="https://img.shields.io/badge/Stats-Vercount-0078d7?style=flat-square" alt="Vercount">
+        </div>
+
+        <div style="margin-top: 15px; font-size: 0.7rem; opacity: 0.5;">
+            琴屿飘灯，山海共生 · 感谢与 AI 共同编织这段代码
+        </div>
+    </footer>
+
+    <script>
+        // 1. 系统状态更新 (10分钟一次)
+        function updateStatus() {
+            fetch('status.php')
+                .then(res => res.json())
+                .then(data => {
+                    document.getElementById('cpu-val').innerText = data.cpu + '%';
+                    document.getElementById('cpu-bar').style.width = data.cpu + '%';
+                    document.getElementById('ram-val').innerText = data.mem + '%';
+                    document.getElementById('ram-bar').style.width = data.mem + '%';
+                    document.getElementById('disk-val').innerText = data.disk + '%';
+                    document.getElementById('disk-bar').style.width = data.disk + '%';
+                    document.getElementById('net-in').innerText = data.net_in;
+                    document.getElementById('net-out').innerText = data.net_out;
+                    document.getElementById('uptime-val').innerText = 'UP: ' + data.uptime.toUpperCase();
+                    document.getElementById('days-val').innerText = data.days_left + ' 天';
+                    document.getElementById('days-bar').style.width = Math.min((data.days_left / 30) * 100, 100) + '%';
+                }).catch(e => console.log("服务器数据同步中..."));
+        }
+
+        // 2. 运行时间计算 (精确到天)
+        function calculateRuntime() {
+            const startDate = new Date('2025-11-27'); // 改为你网站实际开始的日期
+            const today = new Date();
+            const timeDiff = today - startDate;
+            const days = Math.floor(timeDiff / (1000 * 60 * 60 * 24));
+            document.getElementById('runtime-val').innerText = `已在西洲停留 ${days} 个昼夜`;
+        }
+
+        // 3. 天气更新 (高德 IP 定位 + 和风天气)
+        async function updateWeather() {
+            const qweatherKey = '2b90ecc447f9444db695935fdaa7e8bb'; 
+            const amapKey = 'ac70c2ede02ff7cb29a5a874c9ac498d'; 
+
+            try {
+                const amapRes = await fetch(`https://restapi.amap.com/v3/ip?key=${amapKey}`);
+                const amapData = await amapRes.json();
+                let cityName = (amapData.status === '1' && typeof amapData.city === 'string') ? amapData.city : '北京';
+
+                const geoRes = await fetch(`https://geoapi.qweather.com/v2/city/lookup?location=${cityName}&key=${qweatherKey}`);
+                const geoData = await geoRes.json();
+                
+                if (geoData.code === '200' && geoData.location) {
+                    const locationId = geoData.location[0].id;
+                    const displayCity = geoData.location[0].name;
+                    const weatherRes = await fetch(`https://devapi.qweather.com/v7/weather/now?location=${locationId}&key=${qweatherKey}`);
+                    const weatherData = await weatherRes.json();
+                    
+                    if (weatherData.code === '200') {
+                        document.getElementById('temp-val').innerText = weatherData.now.temp + '°C';
+                        document.getElementById('loc-val').innerText = displayCity + ' · ' + weatherData.now.text;
+                    }
+                }
+            } catch (e) {
+                document.getElementById('temp-val').innerText = "N/A";
+                document.getElementById('loc-val').innerText = "定位失败";
+            }
+        }
+
+        // 4. 一言更新
+        function updateHitokoto() {
+            fetch('https://v1.hitokoto.cn')
+                .then(res => res.json())
+                .then(data => {
+                    document.getElementById('hitokoto_text').innerText = data.hitokoto;
+                });
+        }
+
+        // 初始化调用
+        updateStatus();
+        calculateRuntime();
+        updateWeather();
+        updateHitokoto();
+        
+        // 只有系统状态是 10 分钟刷一次，减轻服务器压力
+        setInterval(updateStatus, 600000); 
+    </script>
+</body>
+</html>
