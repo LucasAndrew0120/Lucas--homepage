@@ -1,12 +1,14 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Lucas的忘忧斋</title>
     <link rel="icon" href="https://pic1.imgdb.cn/item/68fe309a3203f7be00a0c198.png" type="image/png">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="stylesheet" href="https://chinese-fonts-cdn.deno.dev/packages/lywkpmydb/dist/LXGWWenKaiScreen/result.css">
+    <link rel="stylesheet"
+        href="https://chinese-fonts-cdn.deno.dev/packages/lywkpmydb/dist/LXGWWenKaiScreen/result.css">
     <script src="https://cn.vercount.one/js" async></script>
 
     <style>
@@ -18,13 +20,18 @@
         }
 
         /* 全局布局 */
-        * { box-sizing: border-box; margin: 0; padding: 0; }
-        
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
         body {
             font-family: 'LXGW WenKai Screen', sans-serif;
             min-height: 100vh;
             display: flex;
-            flex-direction: column; /* 改为纵向布局以容纳页脚 */
+            flex-direction: column;
+            /* 改为纵向布局以容纳页脚 */
             justify-content: center;
             align-items: center;
             padding: 40px 20px;
@@ -34,8 +41,14 @@
         }
 
         body::before {
-            content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0, 0, 0, 0.4); z-index: -1;
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.4);
+            z-index: -1;
         }
 
         .dashboard {
@@ -46,11 +59,25 @@
             flex-wrap: wrap;
             align-items: stretch;
             margin-top: 60px;
-            margin-bottom: 30px; /* 为页脚留出空间 */
+            margin-bottom: 30px;
+            /* 为页脚留出空间 */
         }
 
-        .col-left { flex: 1; min-width: 320px; display: flex; flex-direction: column; gap: 20px; }
-        .col-right { flex: 1.4; min-width: 320px; display: flex; flex-direction: column; gap: 20px; }
+        .col-left {
+            flex: 1;
+            min-width: 320px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .col-right {
+            flex: 1.4;
+            min-width: 320px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
 
         /* 通用卡片 */
         .glass-card {
@@ -60,62 +87,188 @@
             border: var(--border);
             border-radius: 24px;
             padding: 30px;
-            box-shadow: 0 20px 50px rgba(0,0,0,0.3);
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.3);
             width: 100%;
         }
 
         /* 个人信息 */
-        .profile { text-align: center; width: 100%; }
-        .avatar { 
-            width: 110px; height: 110px; border-radius: 50%; 
-            border: 3px solid var(--accent-color); margin-bottom: 20px;
+        .profile {
+            text-align: center;
+            width: 100%;
+        }
+
+        .avatar {
+            width: 110px;
+            height: 110px;
+            border-radius: 50%;
+            border: 3px solid var(--accent-color);
+            margin-bottom: 20px;
             transition: var(--trans-fast);
         }
-        .avatar:hover { transform: rotate(360deg); }
-        .name { font-size: 1.8rem; margin-bottom: 10px; font-weight: bold; }
-        .bio { font-size: 0.95rem; color: #ccc; line-height: 1.6; margin-bottom: 20px; }
+
+        .avatar:hover {
+            transform: rotate(360deg);
+        }
+
+        .name {
+            font-size: 1.8rem;
+            margin-bottom: 10px;
+            font-weight: bold;
+        }
+
+        .bio {
+            font-size: 0.95rem;
+            color: #ccc;
+            line-height: 1.6;
+            margin-bottom: 20px;
+        }
 
         /* 社交账号 */
-        .social-links { display: flex; justify-content: center; gap: 12px; margin-top: 10px; }
+        .social-links {
+            display: flex;
+            justify-content: center;
+            gap: 12px;
+            margin-top: 10px;
+        }
+
         .social-item {
-            width: 38px; height: 38px; display: flex; align-items: center; justify-content: center;
-            border-radius: 10px; background: rgba(255, 255, 255, 0.05); border: var(--border);
-            color: rgba(255, 255, 255, 0.7); text-decoration: none; font-size: 1.1rem;
+            width: 38px;
+            height: 38px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 10px;
+            background: rgba(255, 255, 255, 0.05);
+            border: var(--border);
+            color: rgba(255, 255, 255, 0.7);
+            text-decoration: none;
+            font-size: 1.1rem;
             transition: var(--trans-fast);
         }
+
         .social-item:hover {
-            background: rgba(100, 255, 218, 0.1); color: var(--accent-color);
-            border-color: var(--accent-color); transform: translateY(-3px);
+            background: rgba(100, 255, 218, 0.1);
+            color: var(--accent-color);
+            border-color: var(--accent-color);
+            transform: translateY(-3px);
         }
 
         /* 监控条 */
-        .stat-header { display: flex; align-items: center; gap: 10px; margin-bottom: 15px; font-size: 0.9rem; font-weight: bold; }
-        .status-dot { width: 8px; height: 8px; border-radius: 50%; background: #00ff88; box-shadow: 0 0 10px #00ff88; }
-        .progress-item { margin-bottom: 15px; }
-        .progress-label { display: flex; justify-content: space-between; font-size: 0.8rem; margin-bottom: 6px; color: #ddd; }
-        .progress-bg { background: rgba(255,255,255,0.1); height: 8px; border-radius: 4px; overflow: hidden; }
-        .progress-bar { height: 100%; width: 0%; background: linear-gradient(90deg, var(--accent-color), #4facfe); transition: width 1s ease; }
+        .stat-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 15px;
+            font-size: 0.9rem;
+            font-weight: bold;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #00ff88;
+            box-shadow: 0 0 10px #00ff88;
+        }
+
+        .progress-item {
+            margin-bottom: 15px;
+        }
+
+        .progress-label {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.8rem;
+            margin-bottom: 6px;
+            color: #ddd;
+        }
+
+        .progress-bg {
+            background: rgba(255, 255, 255, 0.1);
+            height: 8px;
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .progress-bar {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg, var(--accent-color), #4facfe);
+            transition: width 1s ease;
+            border-radius: 4px;
+        }
 
         /* 快捷入口 */
-        .link-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(90px, 1fr)); gap: 12px; }
+        .link-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(90px, 1fr));
+            gap: 12px;
+        }
+
         .grid-item {
-            display: flex; flex-direction: column; align-items: center;
-            padding: 15px 5px; background: rgba(255,255,255,0.05);
-            border-radius: 16px; text-decoration: none; color: white;
-            border: 1px solid transparent; transition: var(--trans-fast);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 15px 5px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 16px;
+            text-decoration: none;
+            color: white;
+            border: 1px solid transparent;
+            transition: var(--trans-fast);
         }
+
         .grid-item:hover {
-            background: rgba(255,255,255,0.1); border-color: var(--accent-color); transform: translateY(-5px);
+            background: rgba(255, 255, 255, 0.1);
+            border-color: var(--accent-color);
+            transform: translateY(-5px);
         }
-        .grid-icon { width: 32px; height: 32px; margin-bottom: 8px; border-radius: 6px; }
-        .grid-item span { font-size: 0.75rem; }
+
+        .grid-icon {
+            width: 32px;
+            height: 32px;
+            margin-bottom: 8px;
+            border-radius: 6px;
+        }
+
+        .grid-item span {
+            font-size: 0.75rem;
+        }
 
         /* 一言 */
-        .hitokoto-text { font-size: 0.95rem; font-style: italic; line-height: 1.6; color: #eee; min-height: 3em; }
-        .small-widgets { display: flex; gap: 15px; margin-top: 15px; padding-top: 15px; border-top: 1px solid rgba(255,255,255,0.1); }
-        .widget-box { flex: 1; text-align: center; }
-        .widget-val { font-size: 1.1rem; font-weight: bold; display: block; }
-        .widget-label { font-size: 0.65rem; color: #888; text-transform: uppercase; letter-spacing: 1px; }
+        .hitokoto-text {
+            font-size: 0.95rem;
+            font-style: italic;
+            line-height: 1.6;
+            color: #eee;
+            min-height: 3em;
+        }
+
+        .small-widgets {
+            display: flex;
+            gap: 15px;
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .widget-box {
+            flex: 1;
+            text-align: center;
+        }
+
+        .widget-val {
+            font-size: 1.1rem;
+            font-weight: bold;
+            display: block;
+        }
+
+        .widget-label {
+            font-size: 0.65rem;
+            color: #888;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
 
         /* 页脚样式 */
         .footer {
@@ -127,6 +280,7 @@
             color: rgba(255, 255, 255, 0.6);
             margin-top: auto;
         }
+
         .badge-list {
             display: flex;
             justify-content: center;
@@ -135,14 +289,23 @@
             margin-top: 12px;
             opacity: 0.8;
         }
-        .badge-list img { height: 20px; }
+
+        .badge-list img {
+            height: 20px;
+        }
 
         @media (max-width: 768px) {
-            .dashboard { flex-direction: column; }
-            body { padding: 20px 10px; }
+            .dashboard {
+                flex-direction: column;
+            }
+
+            body {
+                padding: 20px 10px;
+            }
         }
     </style>
 </head>
+
 <body>
 
     <div class="dashboard">
@@ -153,8 +316,10 @@
                     <h2 class="name">LucasAndrew</h2>
                     <p class="bio"><br>南风知我意，吹梦到西洲</p>
                     <div class="social-links">
-                        <a href="https://github.com/lucasandrew0120" target="_blank" class="social-item" title="GitHub"><i class="fab fa-github"></i></a>
-                        <a href="mailto:LucasAndrew0120@outlook.com" class="social-item" title="Email"><i class="fas fa-envelope"></i></a>
+                        <a href="https://github.com/lucasandrew0120" target="_blank" class="social-item"
+                            title="GitHub"><i class="fab fa-github"></i></a>
+                        <a href="mailto:LucasAndrew0120@outlook.com" class="social-item" title="Email"><i
+                                class="fas fa-envelope"></i></a>
                     </div>
                 </div>
             </div>
@@ -182,21 +347,32 @@
                 </div>
                 <div class="progress-item">
                     <div class="progress-label"><span>CPU 负载</span> <span id="cpu-val">0%</span></div>
-                    <div class="progress-bg"><div class="progress-bar" id="cpu-bar"></div></div>
+                    <div class="progress-bg">
+                        <div class="progress-bar" id="cpu-bar"></div>
+                    </div>
                 </div>
                 <div class="progress-item">
                     <div class="progress-label"><span>内存使用</span> <span id="ram-val">0%</span></div>
-                    <div class="progress-bg"><div class="progress-bar" id="ram-bar" style="background: linear-gradient(90deg, #fce38a, #f38181);"></div></div>
+                    <div class="progress-bg">
+                        <div class="progress-bar" id="ram-bar"
+                            style="background: linear-gradient(90deg, #fce38a, #f38181);"></div>
+                    </div>
                 </div>
                 <div class="progress-item">
                     <div class="progress-label"><span>磁盘空间</span> <span id="disk-val">0%</span></div>
-                    <div class="progress-bg"><div class="progress-bar" id="disk-bar" style="background: linear-gradient(90deg, #a8edea, #fed6e3);"></div></div>
+                    <div class="progress-bg">
+                        <div class="progress-bar" id="disk-bar"
+                            style="background: linear-gradient(90deg, #a8edea, #fed6e3);"></div>
+                    </div>
                 </div>
                 <div class="progress-item">
                     <div class="progress-label"><span>续费倒计时</span> <span id="days-val">-- 天</span></div>
-                    <div class="progress-bg"><div class="progress-bar" id="days-bar"></div></div>
+                    <div class="progress-bg">
+                        <div class="progress-bar" id="days-bar"></div>
+                    </div>
                 </div>
-                <div style="display: flex; justify-content: space-between; font-size: 0.7rem; color: #888; margin-top: 5px;">
+                <div
+                    style="display: flex; justify-content: space-between; font-size: 0.7rem; color: #888; margin-top: 5px;">
                     <span><i class="fas fa-download"></i> <span id="net-in">0</span> KB/s</span>
                     <span id="uptime-val">UPTIME: LOADING</span>
                     <span><i class="fas fa-upload"></i> <span id="net-out">0</span> KB/s</span>
@@ -215,7 +391,8 @@
                         <span>OpenList</span>
                     </a>
                     <a href="https://speed.lris625.top/" target="_blank" class="grid-item">
-                        <img src="https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/svg/librespeed.svg" class="grid-icon">
+                        <img src="https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/svg/librespeed.svg"
+                            class="grid-icon">
                         <span>LibreSpeed</span>
                     </a>
                     <a href="https://ech0.lris625.top/" target="_blank" class="grid-item">
@@ -235,13 +412,14 @@
         <div style="margin-bottom: 10px;">
             © 2026 LucasAndrew · <span id="runtime-val">载入中...</span>
         </div>
-        
+
         <div class="badge-list">
             <img src="https://img.shields.io/badge/Server-1Panel-orange?style=flat-square" alt="1Panel">
             <img src="https://img.shields.io/badge/Web-OpenResty-009900?style=flat-square&logo=nginx" alt="OpenResty">
-            
-            <img src="https://img.shields.io/badge/Crafted%20with-Gemini%20AI-4285f4?style=flat-square&logo=google-gemini&logoColor=white" alt="Gemini AI">
-            
+
+            <img src="https://img.shields.io/badge/Crafted%20with-Gemini%20AI-4285f4?style=flat-square&logo=google-gemini&logoColor=white"
+                alt="Gemini AI">
+
             <img src="https://img.shields.io/badge/Stats-Vercount-0078d7?style=flat-square" alt="Vercount">
         </div>
 
@@ -281,8 +459,8 @@
 
         // 3. 天气更新 (高德 IP 定位 + 和风天气)
         async function updateWeather() {
-            const qweatherKey = '2b90ecc447f9444db695935fdaa7e8bb'; 
-            const amapKey = 'ac70c2ede02ff7cb29a5a874c9ac498d'; 
+            const qweatherKey = '2b90ecc447f9444db695935fdaa7e8bb';
+            const amapKey = 'ac70c2ede02ff7cb29a5a874c9ac498d';
 
             try {
                 const amapRes = await fetch(`https://restapi.amap.com/v3/ip?key=${amapKey}`);
@@ -291,13 +469,13 @@
 
                 const geoRes = await fetch(`https://geoapi.qweather.com/v2/city/lookup?location=${cityName}&key=${qweatherKey}`);
                 const geoData = await geoRes.json();
-                
+
                 if (geoData.code === '200' && geoData.location) {
                     const locationId = geoData.location[0].id;
                     const displayCity = geoData.location[0].name;
                     const weatherRes = await fetch(`https://devapi.qweather.com/v7/weather/now?location=${locationId}&key=${qweatherKey}`);
                     const weatherData = await weatherRes.json();
-                    
+
                     if (weatherData.code === '200') {
                         document.getElementById('temp-val').innerText = weatherData.now.temp + '°C';
                         document.getElementById('loc-val').innerText = displayCity + ' · ' + weatherData.now.text;
@@ -323,9 +501,10 @@
         calculateRuntime();
         updateWeather();
         updateHitokoto();
-        
+
         // 只有系统状态是 10 分钟刷一次，减轻服务器压力
         setInterval(updateStatus, 600000); 
     </script>
 </body>
+
 </html>
