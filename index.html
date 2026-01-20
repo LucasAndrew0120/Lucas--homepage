@@ -99,6 +99,7 @@
         .profile {
             text-align: center;
             width: 100%;
+            padding-bottom: 15px;
         }
 
         .avatar {
@@ -124,7 +125,7 @@
             font-size: 0.95rem;
             color: #ccc;
             line-height: 1.6;
-            margin-bottom: 20px;
+            margin-bottom: 25px;
         }
 
         /* 社交账号 */
@@ -245,7 +246,7 @@
             font-style: italic;
             line-height: 1.6;
             color: #eee;
-            min-height: 3em;
+            min-height: 4em;
         }
 
         .small-widgets {
@@ -300,6 +301,124 @@
             height: 20px;
         }
 
+        /* GitHub贡献图样式 */
+        .github-chart-img {
+            width: 100%;
+            max-width: 100%;
+            border-radius: 12px;
+            margin-top: 15px;
+            display: block;
+        }
+
+        .github-chart-container {
+            width: 100%;
+            max-width: 100%;
+            border-radius: 12px;
+            margin-top: 15px;
+            overflow: hidden;
+        }
+
+        .github-chart-caption {
+            font-size: 0.8rem;
+            color: #aaa;
+            text-align: center;
+            margin-top: 10px;
+        }
+
+        /* 最新说说卡片样式 */
+        .echo-container {
+            margin-top: 15px;
+            min-height: 120px;
+        }
+
+        .echo-loading {
+            text-align: center;
+            padding: 30px 0;
+            color: #aaa;
+            font-size: 0.9rem;
+        }
+
+        .echo-item {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 12px;
+            padding: 15px;
+            margin-bottom: 12px;
+            border: 1px solid transparent;
+            transition: var(--trans-fast);
+        }
+
+        .echo-item:hover {
+            background: rgba(255, 255, 255, 0.08);
+            border-color: rgba(255, 107, 107, 0.3);
+        }
+
+        .echo-content {
+            font-size: 0.9rem;
+            line-height: 1.6;
+            color: #eee;
+            margin-bottom: 10px;
+            word-break: break-word;
+        }
+
+        .echo-meta {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.75rem;
+            color: #888;
+        }
+
+        .echo-time {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .echo-likes {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            color: #64ffda;
+        }
+
+        .echo-footer {
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            text-align: center;
+        }
+
+        .echo-link {
+            color: #64ffda;
+            text-decoration: none;
+            font-size: 0.8rem;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            transition: var(--trans-fast);
+        }
+
+        .echo-link:hover {
+            color: #4aff7a;
+            text-decoration: underline;
+        }
+
+        .echo-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 5px;
+            margin-top: 8px;
+        }
+
+        .echo-tag {
+            background: rgba(100, 255, 218, 0.1);
+            color: #64ffda;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 0.7rem;
+            border: 1px solid rgba(100, 255, 218, 0.2);
+        }
+
         @media (max-width: 768px) {
             .dashboard {
                 flex-direction: column;
@@ -307,6 +426,12 @@
 
             body {
                 padding: 20px 10px;
+            }
+            
+            .echo-meta {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 5px;
             }
         }
     </style>
@@ -341,6 +466,22 @@
                         <span id="temp-val" class="widget-val">--</span>
                         <span id="loc-val" class="widget-label">城市</span>
                     </div>
+                </div>
+            </div>
+
+            <!-- 最新说说卡片 -->
+            <div class="glass-card">
+                <div class="stat-header">
+                    <div class="status-dot" style="background: #64ffda;"></div>
+                    <span>最新碎碎念 / Latest Thinking</span>
+                </div>
+                <div id="echo-container" class="echo-container">
+                    <div class="echo-loading">正在加载最新说说...</div>
+                </div>
+                <div class="echo-footer">
+                    <a href="https://ech0.lris625.top/" target="_blank" class="echo-link">
+                        查看更多碎碎念 <i class="fas fa-external-link-alt"></i>
+                    </a>
                 </div>
             </div>
         </div>
@@ -411,6 +552,19 @@
                     </a>
                 </div>
             </div>
+
+            <div class="glass-card">
+                <div class="stat-header">
+                    <div class="status-dot" style="background: #64ffda;"></div>
+                    <span>GitHub 贡献图 / Contributions</span>
+                </div>
+                <div class="github-chart-container" id="github-chart-container">
+                    <!-- SVG将在这里动态加载 -->
+                </div>
+                <div class="github-chart-caption" id="github-chart-caption">
+                    数据加载中... · LucasAndrew0120's Github chart
+                </div>
+            </div>
         </div>
     </div>
 
@@ -430,7 +584,7 @@
         </div>
 
         <div style="margin-top: 15px; font-size: 0.7rem; opacity: 0.5;">
-            琴屿飘灯，山海共生 · 感谢与 AI 共同编织这段代码
+            琴屿飘灯，山海共生 · 与 AI 共同编织这段代码
         </div>
     </footer>
 
@@ -502,14 +656,286 @@
                 });
         }
 
+        // 5. 更新GitHub贡献图说明
+        function updateGitHubChartInfo() {
+            fetch('github_contributions.php')
+                .then(res => res.json())
+                .then(data => {
+                    if (data && data.last_updated) {
+                        const lastUpdated = new Date(data.last_updated);
+                        const now = new Date();
+                        const diffHours = Math.floor((now - lastUpdated) / (1000 * 60 * 60));
+                        
+                        let updateText = '数据已缓存';
+                        if (diffHours < 1) {
+                            updateText = '数据刚刚更新';
+                        } else if (diffHours === 1) {
+                            updateText = '数据1小时前更新';
+                        } else if (diffHours < 24) {
+                            updateText = `数据${diffHours}小时前更新`;
+                        } else {
+                            const diffDays = Math.floor(diffHours / 24);
+                            updateText = `数据${diffDays}天前更新`;
+                        }
+                        
+                        const totalContributions = data.contributions?.total || 0;
+                        const caption = document.getElementById('github-chart-caption');
+                        if (caption) {
+                            caption.innerHTML = `${updateText} · 最近30天共${totalContributions}次提交 · LucasAndrew0120's Github chart`;
+                        }
+                    }
+                })
+                .catch(e => {
+                    console.log("GitHub贡献数据获取失败");
+                    const caption = document.getElementById('github-chart-caption');
+                    if (caption) {
+                        caption.innerHTML = '数据每两小时更新一次 · LucasAndrew0120\'s Github chart';
+                    }
+                });
+        }
+
+        // 6. 动态加载GitHub贡献图SVG
+        function loadGitHubChart() {
+            const container = document.getElementById('github-chart-container');
+            const caption = document.getElementById('github-chart-caption');
+            
+            if (!container) return;
+            
+            // 添加时间戳避免缓存
+            fetch('github_contributions.php?format=svg&t=' + new Date().getTime())
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok');
+                    }
+                    return response.text();
+                })
+                .then(svgText => {
+                    // 直接插入SVG内容
+                    container.innerHTML = svgText;
+                    
+                    // 更新说明信息
+                    updateGitHubChartInfo();
+                    
+                    // 确保SVG的宽度适应容器
+                    const svgElement = container.querySelector('svg');
+                    if (svgElement) {
+                        svgElement.style.width = '100%';
+                        svgElement.style.height = 'auto';
+                        svgElement.style.display = 'block';
+                    }
+                })
+                .catch(error => {
+                    console.log("贡献图加载失败，使用备用图片", error);
+                    // 备用方案：使用图片
+                    container.innerHTML = '<img src="https://ghchart.rshah.org/LucasAndrew0120" alt="GitHub Contributions" style="width:100%; border-radius:12px;">';
+                    if (caption) {
+                        caption.innerHTML = '数据加载失败，使用备用图表 · LucasAndrew0120\'s Github chart';
+                    }
+                });
+        }
+
+        // 7. 加载最新Ech0说说
+        function loadLatestEcho() {
+            const container = document.getElementById('echo-container');
+            if (!container) return;
+            
+            // 显示加载状态
+            container.innerHTML = '<div class="echo-loading">正在加载最新说说...</div>';
+            
+            // Ech0 API地址 - 使用用户提供的地址
+            const echoApiUrl = 'https://ech0.lris625.top/api/echo/page';
+            
+            // 请求参数：获取第一页，每页3条
+            const params = new URLSearchParams({
+                page: '1',
+                pageSize: '1'
+            });
+            
+            // 添加调试信息
+            console.log('正在请求Ech0 API:', `${echoApiUrl}?${params}`);
+            
+            fetch(`${echoApiUrl}?${params}`, {
+                mode: 'cors', // 明确指定CORS模式
+                headers: {
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json'
+                }
+            })
+                .then(response => {
+                    console.log('API响应状态:', response.status, response.statusText);
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status} - ${response.statusText}`);
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    console.log('API响应数据:', data);
+                    
+                    // 检查API响应格式 - 根据实际响应调整
+                    let echoes = null;
+                    
+                    // 格式1: {code: 1, data: {items: [...]}}
+                    if (data.code === 1 && data.data && data.data.items && Array.isArray(data.data.items)) {
+                        echoes = data.data.items;
+                    }
+                    // 格式2: {code: 1, data: [...]}
+                    else if (data.code === 1 && data.data && Array.isArray(data.data)) {
+                        echoes = data.data;
+                    }
+                    // 格式3: {data: {data: [...]}}
+                    else if (data.data && data.data.data && Array.isArray(data.data.data)) {
+                        echoes = data.data.data;
+                    }
+                    // 格式4: 直接返回数组
+                    else if (Array.isArray(data)) {
+                        echoes = data;
+                    }
+                    // 格式5: {data: [...]}
+                    else if (data.data && Array.isArray(data.data)) {
+                        echoes = data.data;
+                    }
+                    // 格式6: {echoes: [...]}
+                    else if (data.echoes && Array.isArray(data.echoes)) {
+                        echoes = data.echoes;
+                    }
+                    // 格式7: {items: [...]}
+                    else if (data.items && Array.isArray(data.items)) {
+                        echoes = data.items;
+                    }
+                    
+                    if (echoes && echoes.length > 0) {
+                        renderEchoes(echoes, container);
+                    } else {
+                        console.log('数据格式详情:', {
+                            code: data.code,
+                            hasData: !!data.data,
+                            dataType: typeof data.data,
+                            dataKeys: data.data ? Object.keys(data.data) : '无data',
+                            isArray: Array.isArray(data.data),
+                            isItemsArray: data.data && data.data.items && Array.isArray(data.data.items)
+                        });
+                        throw new Error('未找到说说数据或数据格式不正确');
+                    }
+                })
+                .catch(error => {
+                    console.error("Ech0说说加载失败:", error);
+                    container.innerHTML = `
+                        <div class="echo-loading">
+                            <div>说说加载失败</div>
+                            <div style="font-size: 0.8rem; margin-top: 5px; color: #888;">
+                                错误: ${error.message}
+                            </div>
+                            <div style="font-size: 0.7rem; margin-top: 10px; color: #666;">
+                                请打开浏览器控制台查看详细错误信息
+                            </div>
+                        </div>
+                    `;
+                });
+        }
+
+        // 渲染说说列表
+        function renderEchoes(echoes, container) {
+            if (!echoes || echoes.length === 0) {
+                container.innerHTML = `
+                    <div class="echo-loading">
+                        暂无说说内容
+                    </div>
+                `;
+                return;
+            }
+            
+            let html = '';
+            
+            echoes.forEach(echo => {
+                // 格式化时间
+                const createdAt = echo.created_at ? formatTime(echo.created_at) : '未知时间';
+                
+                // 处理标签
+                let tagsHtml = '';
+                if (echo.tags && Array.isArray(echo.tags) && echo.tags.length > 0) {
+                    tagsHtml = '<div class="echo-tags">';
+                    echo.tags.forEach(tag => {
+                        if (tag.name) {
+                            tagsHtml += `<span class="echo-tag">${tag.name}</span>`;
+                        }
+                    });
+                    tagsHtml += '</div>';
+                }
+                
+                // 处理内容 - 限制长度并处理换行
+                let content = echo.content || '';
+                if (content.length > 120) {
+                    content = content.substring(0, 120) + '...';
+                }
+                content = content.replace(/\n/g, '<br>');
+                
+                html += `
+                    <div class="echo-item">
+                        <div class="echo-content">${content}</div>
+                        ${tagsHtml}
+                        <div class="echo-meta">
+                            <div class="echo-time">
+                                <i class="far fa-clock"></i>
+                                <span>${createdAt}</span>
+                            </div>
+                            <div class="echo-likes">
+                                <i class="fas fa-heart"></i>
+                                <span>${echo.fav_count || 0}</span>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            container.innerHTML = html;
+        }
+
+        // 格式化时间
+        function formatTime(timeString) {
+            try {
+                const date = new Date(timeString);
+                const now = new Date();
+                const diffMs = now - date;
+                const diffMins = Math.floor(diffMs / (1000 * 60));
+                const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+                const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+                
+                if (diffMins < 1) {
+                    return '刚刚';
+                } else if (diffMins < 60) {
+                    return `${diffMins}分钟前`;
+                } else if (diffHours < 24) {
+                    return `${diffHours}小时前`;
+                } else if (diffDays < 7) {
+                    return `${diffDays}天前`;
+                } else {
+                    // 超过一周显示具体日期
+                    return date.toLocaleDateString('zh-CN', {
+                        month: 'short',
+                        day: 'numeric'
+                    });
+                }
+            } catch (e) {
+                return '未知时间';
+            }
+        }
+
         // 初始化调用
         updateStatus();
         calculateRuntime();
         updateWeather();
         updateHitokoto();
+        loadGitHubChart();
+        loadLatestEcho();
 
         // 只有系统状态是 10 分钟刷一次，减轻服务器压力
         setInterval(updateStatus, 600000); 
+        
+        // 每2小时更新一次贡献图数据
+        setInterval(loadGitHubChart, 7200000);
+        
+        // 每30分钟更新一次说说数据
+        setInterval(loadLatestEcho, 1800000);
     </script>
 </body>
 
