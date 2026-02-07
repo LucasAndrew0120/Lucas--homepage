@@ -10,7 +10,17 @@
     <link rel="stylesheet"
         href="https://chinese-fonts-cdn.deno.dev/packages/lywkpmydb/dist/LXGWWenKaiScreen/result.css">
     <script src="https://cn.vercount.one/js" async></script>
-
+    <script src="secrets.js"></script>
+    <script defer src="https://umami.lris625.top/script.js" data-website-id=""></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const umamiScript = document.querySelector('script[src="https://umami.lris625.top/script.js"]');
+            if (umamiScript && CONFIG && CONFIG.UMAMI_WEBSITE_ID) {
+                umamiScript.setAttribute('data-website-id', CONFIG.UMAMI_WEBSITE_ID);
+                
+            }
+        });
+    </script>
     <style>
         :root {
             --accent-color: #64ffda;
@@ -93,6 +103,8 @@
             padding: 30px;
             box-shadow: 0 20px 50px rgba(0, 0, 0, 0.3);
             width: 100%;
+            display: flex;
+            flex-direction: column;
         }
 
         /* 个人信息 */
@@ -619,8 +631,8 @@
 
         // 3. 天气更新 (高德 IP 定位 + 和风天气)
         async function updateWeather() {
-            const qweatherKey = '2b90ecc447f9444db695935fdaa7e8bb';
-            const amapKey = 'ac70c2ede02ff7cb29a5a874c9ac498d';
+            const qweatherKey = CONFIG.qweatherKey;
+            const amapKey = CONFIG.amapKey; // 从 secrets.js 中获取高德API密钥
 
             try {
                 const amapRes = await fetch(`https://restapi.amap.com/v3/ip?key=${amapKey}`);
@@ -720,7 +732,7 @@
                     const svgElement = container.querySelector('svg');
                     if (svgElement) {
                         svgElement.style.width = '100%';
-                        svgElement.style.height = 'auto';
+                        svgElement.style.height = '100%';
                         svgElement.style.display = 'block';
                     }
                 })
@@ -937,6 +949,7 @@
         // 每30分钟更新一次说说数据
         setInterval(loadLatestEcho, 1800000);
     </script>
+
 </body>
 
 </html>
