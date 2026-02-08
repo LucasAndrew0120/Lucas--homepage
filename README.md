@@ -34,7 +34,7 @@
 - 将上文中五个文件放入任意支持静态网页部署的平台(Github Page,Cloudflare Page,Vercel,Server-OpenResty,EdgeOne Page)
 
 ## 未来计划
-- [ ] 完善config.js，争取核心代码无外部链接
+- [x] 完善config.js，争取核心代码无外部链接
 - [ ] 添加设置页，允许用户自由管理功能分区
 - [ ] 允许前端修改config.js
 - [ ] Docker环境打包
