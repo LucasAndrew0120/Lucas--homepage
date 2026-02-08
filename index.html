@@ -3,20 +3,52 @@
 
 <head>
     <meta charset="UTF-8">
+    <script src="config.js"></script>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Lucas的忘忧斋</title>
-    <link rel="icon" href="https://pic1.imgdb.cn/item/68fe309a3203f7be00a0c198.png" type="image/png">
+    <!--网站标题-->
+    <script>
+        // 设置页面标题
+        document.title = CONFIG.title;
+    </script>
+
+    <script>
+        // 设置网站图标
+        const link = document.createElement('link');
+        link.rel = 'icon';
+        link.href = CONFIG.icon;
+        link.type = 'image/png';
+        document.head.appendChild(link);
+    </script>
+
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="stylesheet"
-        href="https://chinese-fonts-cdn.deno.dev/packages/lywkpmydb/dist/LXGWWenKaiScreen/result.css">
+    
+    <!--个性化字体--> 
+    <script>
+        const fontLink = document.createElement('link');
+        fontLink.rel = 'stylesheet';
+        fontLink.href = CONFIG.font;
+        fontLink.type = 'text/css';
+        document.head.appendChild(fontLink);
+    </script>
+
+    <!--busuanzi国内接口-->
     <script src="https://cn.vercount.one/js" async></script>
-    <script src="secrets.js"></script>
-    <script defer src="https://umami.lris625.top/script.js" data-website-id=""></script>
+
+    <!-- Umami 统计脚本 -->
+    <script>
+        const umamiScript = document.createElement('script');
+        umamiScript.defer = true;
+        umamiScript.src = CONFIG.umami_domain + '/script.js';  // 注意：需要完整的脚本URL
+        umamiScript.setAttribute('data-website-id', CONFIG.umami_id);
+        umamiScript.async = true;  // 通常也加上async
+        document.head.appendChild(umamiScript);
+    </script>
+
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            const umamiScript = document.querySelector('script[src="https://umami.lris625.top/script.js"]');
-            if (umamiScript && CONFIG && CONFIG.UMAMI_WEBSITE_ID) {
-                umamiScript.setAttribute('data-website-id', CONFIG.UMAMI_WEBSITE_ID);
+            const umamiScript = document.querySelector(`script[src="${CONFIG.umami_domain}/script.js"]`);
+            if (umamiScript && CONFIG && CONFIG.umami_id) {
+                umamiScript.setAttribute('data-website-id', CONFIG.umami_id);
                 
             }
         });
@@ -45,7 +77,7 @@
             justify-content: center;
             align-items: center;
             padding: 40px 20px;
-            background: url('https://pic1.imgdb.cn/item/6943a7742ee916d1a3aee235.webp') center/cover no-repeat fixed;
+            background: url(https://pic1.imgdb.cn/item/6943a7742ee916d1a3aee235.webp) center/cover no-repeat fixed;
             color: white;
             overflow-x: hidden;
             position: relative;
@@ -457,7 +489,7 @@
                 <div class="profile">
                     <img src="https://pic1.imgdb.cn/item/68fe309a3203f7be00a0c198.png" class="avatar" alt="Avatar">
                     <h2 class="name">LucasAndrew</h2>
-                    <p class="bio"><br>南风知我意，吹梦到西洲</p>
+                    <p class="bio"><br><script>document.write(CONFIG.aphorism1);</script></p>
                     <div class="social-links">
                         <a href="https://github.com/lucasandrew0120" target="_blank" class="social-item"
                             title="GitHub"><i class="fab fa-github"></i></a>
@@ -582,7 +614,7 @@
 
     <footer class="footer glass-card">
         <div style="margin-bottom: 10px;">
-            © 2026 LucasAndrew · <span id="runtime-val">载入中...</span>
+            © 2026 <script>document.write(CONFIG.name);</script> <span id="runtime-val">载入中...</span>
         </div>
 
         <div class="badge-list">
@@ -596,7 +628,7 @@
         </div>
 
         <div style="margin-top: 15px; font-size: 0.7rem; opacity: 0.5;">
-            琴屿飘灯，山海共生 · 与 AI 共同编织这段代码
+            <script>document.write(CONFIG.aphorism2)</script>
         </div>
     </footer>
 
@@ -632,7 +664,7 @@
         // 3. 天气更新 (高德 IP 定位 + 和风天气)
         async function updateWeather() {
             const qweatherKey = CONFIG.qweatherKey;
-            const amapKey = CONFIG.amapKey; // 从 secrets.js 中获取高德API密钥
+            const amapKey = CONFIG.amapKey; // 从 config.js 中获取高德API密钥
 
             try {
                 const amapRes = await fetch(`https://restapi.amap.com/v3/ip?key=${amapKey}`);
@@ -739,9 +771,9 @@
                 .catch(error => {
                     console.log("贡献图加载失败，使用备用图片", error);
                     // 备用方案：使用图片
-                    container.innerHTML = '<img src="https://ghchart.rshah.org/LucasAndrew0120" alt="GitHub Contributions" style="width:100%; border-radius:12px;">';
+                    container.innerHTML = `<img src="https://ghchart.rshah.org/${github_username}" alt="GitHub Contributions" style="width:100%; border-radius:12px;">`;
                     if (caption) {
-                        caption.innerHTML = '数据加载失败，使用备用图表 · LucasAndrew0120\'s Github chart';
+                        caption.innerHTML = `数据加载失败，使用备用图表 · ${github_username}'s Github chart`;
                     }
                 });
         }
@@ -755,7 +787,7 @@
             container.innerHTML = '<div class="echo-loading">正在加载最新说说...</div>';
             
             // Ech0 API地址 - 使用用户提供的地址
-            const echoApiUrl = 'https://ech0.lris625.top/api/echo/page';
+            const echoApiUrl = CONFIG.echoApiUrl;
             
             // 请求参数：获取第一页，每页3条
             const params = new URLSearchParams({
