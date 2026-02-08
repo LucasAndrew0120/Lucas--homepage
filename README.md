@@ -1,6 +1,8 @@
 ![首页截图](https://pic1.imgdb.cn/item/698809b442b1cbeca1faa8cf.png)
 
-<center>Lucas的忘忧斋——现代化的静态个人主页</center>
+<p align="center">
+  Lucas的忘忧斋——现代化的静态个人主页
+</p>
 
 ## 功能介绍
 - 基础的个人信息（昵称 签名 社交矩阵）
@@ -26,7 +28,10 @@
 
 
 ## 部署办法
-将上文中五个文件部署到任意支持静态页面的平台即可
+- fork本项目
+- 进入**example.js**,根据注释填入必要数据
+- 将**example.js**,重命名为**config.js**
+- 将上文中五个文件放入任意支持静态网页部署的平台(Github Page,Cloudflare Page,Vercel,Server-OpenResty,EdgeOne Page)
 
 ## 未来计划
 - [ ] 完善config.js，争取核心代码无外部链接
