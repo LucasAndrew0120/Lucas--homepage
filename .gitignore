@@ -2,3 +2,5 @@
 .stfolder/syncthing-folder-4ea140.txt
 # 忽略 config.js 文件，里面包含敏感信息
 config.js
+# 忽略vscode配置文件
+.vscode/
