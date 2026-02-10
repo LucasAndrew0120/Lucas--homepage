@@ -53,12 +53,36 @@
             }
         });
     </script>
+
+    <script>
+        // 切换弹窗显示/隐藏
+        function toggleModal() {
+            const modal = document.getElementById('settingsModal');
+            if (modal.style.display === 'flex') {
+                modal.style.display = 'none';
+            } else {
+                modal.style.display = 'flex';
+            }
+        }
+
+        // 点击遮罩层空白处也可关闭
+        window.onclick = function(event) {
+            const modal = document.getElementById('settingsModal');
+            if (event.target == modal) {
+                modal.style.display = "none";
+            }
+        }
+    </script>
+
     <style>
         :root {
             --accent-color: #64ffda;
             --glass-bg: rgba(20, 20, 20, 0.25);
             --border: 1px solid rgba(255, 255, 255, 0.1);
             --trans-fast: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            /* 新增：统一的容器最大宽度变量 */
+            --container-max-width: 1200px;
+            --compact-max-width: 550px; /* 增加紧凑模式宽度 */
         }
 
         /* 全局布局 */
@@ -66,23 +90,28 @@
             box-sizing: border-box;
             margin: 0;
             padding: 0;
+            
         }
 
+        /* 修改后的 body 样式 */
         body {
             font-family: 'LXGW WenKai Screen', sans-serif;
             min-height: 100vh;
             display: flex;
             flex-direction: column;
-            /* 改为纵向布局以容纳页脚 */
-            justify-content: center;
             align-items: center;
-            padding: 40px 20px;
-            background: url(https://pic1.imgdb.cn/item/6943a7742ee916d1a3aee235.webp) center/cover no-repeat fixed;
-            color: white;
-            overflow-x: hidden;
-            position: relative;
+            justify-content: flex-start;
+            padding: 20px;
+            zoom: 0.9;
+            transition: justify-content 0.5s ease;
+            
+            /* --- 找回背景图的关键：读取 config.js 中的背景配置 --- */
+            background: url('https://api.onenight.me/api/bing/auto') no-repeat center center fixed; /* 示例图，如果是动态背景请确保这里正确 */
+            background-size: cover;
+            color: white; /* 确保文字是白的，不会变成纯黑主题感 */
         }
 
+        /* 确保遮罩层正常工作，这样背景才不会太刺眼 */
         body::before {
             content: '';
             position: fixed;
@@ -90,39 +119,35 @@
             left: 0;
             width: 100%;
             height: 100%;
-            background: rgba(0, 0, 0, 0.65);
-            z-index: 0;
+            background: rgba(0, 0, 0, 0.5); /* 调整这里的 0.5 可以控制背景明暗 */
+            z-index: -1; /* 确保在最底层 */
             pointer-events: none;
         }
 
         .dashboard {
             display: flex;
             gap: 24px;
+            max-width: 1200px;
             width: 100%;
-            max-width: 1000px;
+            height: 100%;
             flex-wrap: wrap;
-            align-items: stretch;
-            margin-top: 60px;
+            align-items: center;
+            margin-top: 10px;
             margin-bottom: 30px;
             /* 为页脚留出空间 */
             position: relative;
             z-index: 1;
+            transition: max-width 0.5s ease, transform 0.3s ease; /* 增加平滑过渡 */
         }
 
-        .col-left {
+        .col-left, .col-right {
             flex: 1;
             min-width: 320px;
             display: flex;
             flex-direction: column;
             gap: 20px;
-        }
-
-        .col-right {
-            flex: 1.4;
-            min-width: 320px;
-            display: flex;
-            flex-direction: column;
-            gap: 20px;
+            justify-content: flex-start;
+            /* 移除 min-height: 700px; */
         }
 
         /* 通用卡片 */
@@ -137,6 +162,10 @@
             width: 100%;
             display: flex;
             flex-direction: column;
+            /* --- 以下是关键修改点 --- */
+            flex-grow: 0;           /* 确保卡片不会被强制拉长 */
+            flex-shrink: 1;         /* 防止卡片被压缩 */
+            height: fit-content;    /* 高度根据内容自动撑开 */
         }
 
         /* 个人信息 */
@@ -250,7 +279,7 @@
         /* 快捷入口 */
         .link-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(90px, 1fr));
+            grid-template-columns: repeat(5, 1fr); /* 固定5列，防止换行 */
             gap: 12px;
         }
 
@@ -322,14 +351,13 @@
         /* 页脚样式 */
         .footer {
             width: 100%;
-            max-width: 1000px;
+            max-width: 1200px;
             text-align: center;
             padding: 25px;
             font-size: 0.85rem;
             color: rgba(255, 255, 255, 0.6);
-            margin-top: auto;
-            position: relative;
-            z-index: 1;
+            margin-top: auto; /* 这是一个技巧：在 flex 布局中将页脚推到底部或保持间距 */
+            margin-bottom: 20px;
         }
 
         .badge-list {
@@ -478,8 +506,128 @@
                 gap: 5px;
             }
         }
+
+        /* 弹窗遮罩层 */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(8px);
+            display: none; /* 初始隐藏 */
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        /* 弹窗内容体 */
+        .modal-content {
+            max-width: 400px;
+            width: 90%;
+            animation: modalFadeIn 0.3s ease;
+        }
+
+        @keyframes modalFadeIn {
+            from { opacity: 0; transform: translateY(-20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .close-btn {
+            margin-left: auto;
+            cursor: pointer;
+            font-size: 1.5rem;
+            color: #888;
+            transition: var(--trans-fast);
+        }
+
+        .close-btn:hover {
+            color: var(--accent-color);
+        }
+
+        /* 弹窗内条目样式 */
+        .setting-item {
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+            margin-bottom: 12px;
+        }
+        
+        .dashboard, .footer {
+            transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .dashboard.compact-mode {
+            max-width: 550px; /* 增加宽度 */
+            margin-top: 0;
+            margin-bottom: 20px;
+        }
+
+        .footer.compact-mode {
+            max-width: 550px; /* 增加宽度 */
+            margin-top: 20px; /* 较小的间距 */
+        }
+        
+        /* 紧凑模式下的个人信息卡片优化 */
+        .dashboard.compact-mode .glass-card {
+            padding: 20px; /* 减少内边距 */
+        }
+        
+        .dashboard.compact-mode .profile {
+            padding-bottom: 10px; /* 减少底部内边距 */
+        }
+        
+        .dashboard.compact-mode .avatar {
+            width: 90px; /* 缩小头像 */
+            height: 90px;
+            margin-bottom: 15px;
+        }
+        
+        .dashboard.compact-mode .name {
+            font-size: 1.5rem; /* 缩小名字字体 */
+            margin-bottom: 8px;
+        }
+        
+        .dashboard.compact-mode .bio {
+            font-size: 0.85rem; /* 缩小简介字体 */
+            margin-bottom: 15px;
+            line-height: 1.5;
+        }
+        
+        .dashboard.compact-mode .social-item {
+            width: 34px; /* 缩小社交图标 */
+            height: 34px;
+            font-size: 1rem;
+        }
+        
+       
+        
     </style>
 </head>
+
+<div id="settingsModal" class="modal-overlay">
+    <div class="glass-card modal-content">
+        <div class="stat-header">
+            <i class="fas fa-th-large"></i>
+            <span>看板布局管理 / Layout</span>
+            <span class="close-btn" onclick="toggleModal()">&times;</span>
+        </div>
+        <div style="padding: 10px 0; font-size: 0.9rem;">
+            <div class="setting-item"><span>一言统计</span><input type="checkbox" id="check-hitokoto" checked onchange="toggleSection('hitokoto-card', this.checked)"></div>
+            <div class="setting-item"><span>最新说说</span><input type="checkbox" id="check-echo" checked onchange="toggleSection('echo-card', this.checked)"></div>
+            <div class="setting-item"><span>系统监控</span><input type="checkbox" id="check-monitor" checked onchange="toggleSection('monitor-card', this.checked)"></div>
+            <div class="setting-item"><span>快捷入口</span><input type="checkbox" id="check-links" checked onchange="toggleSection('links-card', this.checked)"></div>
+            <div class="setting-item"><span>Github图</span><input type="checkbox" id="check-github" checked onchange="toggleSection('github-card', this.checked)"></div>
+
+            <div style="display: flex; justify-content: center; width: 100%; margin-top: 20px;">
+                <button style="border: 1px solid var(--accent-color); padding: 8px 30px; border-radius: 12px; background: rgba(100, 255, 218, 0.1); color: var(--accent-color); cursor: pointer; text-decoration: none; font-size: 0.85rem; transition: var(--trans-fast);" onclick="toggleModal()">
+                    保存配置
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
 
 <body>
 
@@ -495,11 +643,13 @@
                             title="GitHub"><i class="fab fa-github"></i></a>
                         <a href="mailto:LucasAndrew0120@outlook.com" class="social-item" title="Email"><i
                                 class="fas fa-envelope"></i></a>
+                        <a href="javascript:void(0);" class="social-item" title="设置" onclick="toggleModal()"><i 
+                                class="fas fa-cog"></i></a>
                     </div>
                 </div>
             </div>
 
-            <div class="glass-card">
+            <div class="glass-card" id="hitokoto-card">
                 <div id="hitokoto_text" class="hitokoto-text">正在摘取星辰...</div>
                 <div class="small-widgets">
                     <div class="widget-box">
@@ -514,7 +664,7 @@
             </div>
 
             <!-- 最新说说卡片 -->
-            <div class="glass-card">
+            <div class="glass-card" id="echo-card">
                 <div class="stat-header">
                     <div class="status-dot" style="background: #64ffda;"></div>
                     <span>最新碎碎念 / Latest Thinking</span>
@@ -531,7 +681,7 @@
         </div>
 
         <div class="col-right">
-            <div class="glass-card">
+            <div class="glass-card" id="monitor-card">
                 <div class="stat-header">
                     <div class="status-dot"></div>
                     <span>系统监控 (Real-time Status)</span>
@@ -570,7 +720,7 @@
                 </div>
             </div>
 
-            <div class="glass-card">
+            <div class="glass-card" id="links-card">
                 <div class="stat-header">快捷入口 / Shortcuts</div>
                 <div class="link-grid">
                     <a href="https://blog.lris625.top/" target="_blank" class="grid-item">
@@ -597,7 +747,7 @@
                 </div>
             </div>
 
-            <div class="glass-card">
+            <div class="glass-card" id="github-card">
                 <div class="stat-header">
                     <div class="status-dot" style="background: #64ffda;"></div>
                     <span>GitHub 贡献图 / Contributions</span>
@@ -964,13 +1114,52 @@
             }
         }
 
-        // 初始化调用
-        updateStatus();
-        calculateRuntime();
-        updateWeather();
-        updateHitokoto();
-        loadGitHubChart();
-        loadLatestEcho();
+        // 1. 核心切换函数 - 修复保存问题
+        function toggleSection(sectionId, isVisible) {
+            const element = document.getElementById(sectionId);
+            if (element) {
+                element.style.display = isVisible ? 'flex' : 'none';
+                // 保存状态到本地 - 使用字符串存储
+                localStorage.setItem('config_' + sectionId, isVisible.toString());
+                initLayout(); // 每次切换状态后重新计算布局
+            }
+        }
+
+        // 增强版布局初始化逻辑 - 修复逻辑错误
+       function initLayout() {
+            const sections = ['hitokoto-card', 'echo-card', 'monitor-card', 'links-card', 'github-card'];
+            let visibleCount = 0;
+            
+            sections.forEach(id => {
+                const saved = localStorage.getItem('config_' + id);
+                const el = document.getElementById(id);
+                const isVisible = saved === null ? true : (saved === 'true');
+                
+                if (el) {
+                    el.style.display = isVisible ? 'flex' : 'none';
+                    if (isVisible) visibleCount++;
+                }
+                
+                const checkbox = document.getElementById('check-' + id.split('-')[0]);
+                if (checkbox) checkbox.checked = isVisible;
+            });
+
+            const body = document.body;
+            const dashboard = document.querySelector('.dashboard');
+            const colRight = document.querySelector('.col-right');
+
+            if (visibleCount === 0) {
+                // --- 紧凑居中模式 ---
+                body.style.justifyContent = 'center'; // body 负责垂直居中
+                dashboard.classList.add('compact-mode');
+                if(colRight) colRight.style.display = 'none'; // 隐藏空的右侧列，防止偏移
+            } else {
+                // --- 正常列表模式 ---
+                body.style.justifyContent = 'flex-start';
+                dashboard.classList.remove('compact-mode');
+                if(colRight) colRight.style.display = 'flex';
+            }
+        }
 
         // 只有系统状态是 10 分钟刷一次，减轻服务器压力
         setInterval(updateStatus, 600000); 
@@ -980,6 +1169,21 @@
         
         // 每30分钟更新一次说说数据
         setInterval(loadLatestEcho, 1800000);
+
+        // 在页面加载完成后执行初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            // 先初始化布局
+            initLayout();
+            
+            // 然后加载其他数据
+            updateStatus();
+            calculateRuntime();
+            updateWeather();
+            updateHitokoto();
+            loadGitHubChart();
+            loadLatestEcho();
+            document.body.style.backgroundImage = `url(${CONFIG.background})`;
+        });
     </script>
 
 </body>
