@@ -638,13 +638,13 @@
         <div class="col-left">
             <div class="glass-card">
                 <div class="profile">
-                    <img src="https://pic1.imgdb.cn/item/68fe309a3203f7be00a0c198.png" class="avatar" alt="Avatar">
+                    <img src=CONFIG.avatar class="avatar" alt="Avatar">
                     <h2 class="name">LucasAndrew</h2>
                     <p class="bio"><br><script>document.write(CONFIG.aphorism1);</script></p>
                     <div class="social-links">
-                        <a href="https://github.com/lucasandrew0120" target="_blank" class="social-item"
+                        <a href=CONFIG.github_url target="_blank" class="social-item"
                             title="GitHub"><i class="fab fa-github"></i></a>
-                        <a href="mailto:LucasAndrew0120@outlook.com" class="social-item" title="Email"><i
+                        <a href=CONFIG.email_url class="social-item" title="Email"><i
                                 class="fas fa-envelope"></i></a>
                         <a href="javascript:void(0);" class="social-item" title="设置" onclick="toggleModal()"><i 
                                 class="fas fa-cog"></i></a>
@@ -676,7 +676,7 @@
                     <div class="echo-loading">正在加载最新说说...</div>
                 </div>
                 <div class="echo-footer">
-                    <a href="https://ech0.lris625.top/" target="_blank" class="echo-link">
+                    <a href=CONFIG.echoApiUrl target="_blank" class="echo-link">
                         查看更多碎碎念 <i class="fas fa-external-link-alt"></i>
                     </a>
                 </div>
@@ -726,27 +726,12 @@
             <div class="glass-card" id="links-card">
                 <div class="stat-header">快捷入口 / Shortcuts</div>
                 <div class="link-grid">
-                    <a href="https://blog.lris625.top/" target="_blank" class="grid-item">
-                        <img src="https://pic1.imgdb.cn/item/68fe309a3203f7be00a0c198.png" class="grid-icon">
-                        <span>个人博客</span>
+                    <!-- 示例快捷入口，实际使用时请替换 href、src 和文字描述，并根据需要增减条目
+                    <a href="网站地址" target="_blank" class="grid-item">
+                        <img src="网站图标" class="grid-icon">
+                        <span>文字描述</span>
                     </a>
-                    <a href="https://openlist.lris625.top/" target="_blank" class="grid-item">
-                        <img src="https://res.oplist.org/logo/logo.svg" class="grid-icon">
-                        <span>OpenList</span>
-                    </a>
-                    <a href="https://speed.lris625.top/" target="_blank" class="grid-item">
-                        <img src="https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/svg/librespeed.svg"
-                            class="grid-icon">
-                        <span>LibreSpeed</span>
-                    </a>
-                    <a href="https://ech0.lris625.top/" target="_blank" class="grid-item">
-                        <img src="https://pic1.imgdb.cn/item/695a8afca6ed793b783b6427.webp" class="grid-icon">
-                        <span>碎碎念</span>
-                    </a>
-                    <a href="https://read.lris625.top/" target="_blank" class="grid-item">
-                        <img src="https://favicon.im/read.lris625.top" class="grid-icon">
-                        <span>阅读</span>
-                    </a>
+                    -->
                 </div>
             </div>
 
@@ -767,7 +752,7 @@
 
     <footer class="footer glass-card">
         <div style="margin-bottom: 10px;">
-            © 2026 <script>document.write(CONFIG.name);</script> <span id="runtime-val">载入中...</span>
+            © <script>document.write(CONFIG.up_year);</script> <script>document.write(CONFIG.name);</script> <span id="runtime-val">载入中...</span>
         </div>
 
         <div class="badge-list">
@@ -807,7 +792,7 @@
 
         // 2. 运行时间计算 (精确到天)
         function calculateRuntime() {
-            const startDate = new Date('2025-11-27'); // 改为你网站实际开始的日期
+            const startDate = new Date(CONFIG.up_date); // 改为你网站实际开始的日期
             const today = new Date();
             const timeDiff = today - startDate;
             const days = Math.floor(timeDiff / (1000 * 60 * 60 * 24));
