@@ -29,8 +29,7 @@
 
 ## 部署办法
 - fork本项目
-- 进入**example.js**,根据注释填入必要数据
-- 将**example.js**,重命名为**config.js**
+- 进入**config.js**,根据注释填入必要数据
 - 将上文中五个文件放入任意支持静态网页部署的平台(Github Page,Cloudflare Page,Vercel,Server-OpenResty,EdgeOne Page)
 
 ## 未来计划
