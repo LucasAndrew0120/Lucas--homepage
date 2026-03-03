@@ -180,7 +180,7 @@
             height: 110px;
             border-radius: 50%;
             border: 3px solid var(--accent-color);
-            margin-bottom: 20px;
+            margin-bottom: 10px;
             transition: var(--trans-fast);
         }
 
@@ -565,8 +565,11 @@
         }
 
         .footer.compact-mode {
-            max-width: 550px; /* 增加宽度 */
-            margin-top: 20px; /* 较小的间距 */
+            max-width: 1200px;
+            position: absolute;
+            bottom: 20px; /* ← 只改这里调节页脚距底部的距离，不影响卡片位置 */
+            left: 50%;
+            transform: translateX(-50%);
         }
         
         /* 紧凑模式下的个人信息卡片优化 */
@@ -575,24 +578,24 @@
         }
         
         .dashboard.compact-mode .profile {
-            padding-bottom: 10px; /* 减少底部内边距 */
+            padding-bottom: 0px; /* 减少底部内边距 */
         }
         
         .dashboard.compact-mode .avatar {
-            width: 90px; /* 缩小头像 */
-            height: 90px;
-            margin-bottom: 15px;
+            width: 100px; /* 缩小头像 */
+            height: 100px;
+            margin-bottom: 0px;
         }
         
         .dashboard.compact-mode .name {
-            font-size: 1.5rem; /* 缩小名字字体 */
+            font-size: 2.0rem; /* 缩小名字字体 */
             margin-bottom: 8px;
         }
         
         .dashboard.compact-mode .bio {
             font-size: 0.85rem; /* 缩小简介字体 */
             margin-bottom: 15px;
-            line-height: 1.5;
+            line-height: 0.5;
         }
         
         .dashboard.compact-mode .social-item {
@@ -1147,16 +1150,19 @@
             const body = document.body;
             const dashboard = document.querySelector('.dashboard');
             const colRight = document.querySelector('.col-right');
+            const footer = document.querySelector('.footer');
 
             if (visibleCount === 0) {
                 // --- 紧凑居中模式 ---
                 body.style.justifyContent = 'center'; // body 负责垂直居中
                 dashboard.classList.add('compact-mode');
+                if(footer) footer.classList.add('compact-mode');
                 if(colRight) colRight.style.display = 'none'; // 隐藏空的右侧列，防止偏移
             } else {
                 // --- 正常列表模式 ---
                 body.style.justifyContent = 'flex-start';
                 dashboard.classList.remove('compact-mode');
+                if(footer) footer.classList.remove('compact-mode');
                 if(colRight) colRight.style.display = 'flex';
             }
         }
