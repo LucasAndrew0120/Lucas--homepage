@@ -173,18 +173,33 @@
             text-align: center;
             width: 100%;
             padding-bottom: 15px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
         }
 
-        .avatar {
+        .avatar-wrapper {
             width: 110px;
             height: 110px;
+            min-width: 110px;
+            min-height: 110px;
             border-radius: 50%;
             border: 3px solid var(--accent-color);
             margin-bottom: 10px;
+            overflow: hidden;
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .avatar {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+            border-radius: 50%;
             transition: var(--trans-fast);
         }
 
-        .avatar:hover {
+        .avatar-wrapper:hover .avatar {
             transform: rotate(360deg);
         }
 
@@ -356,8 +371,10 @@
             padding: 25px;
             font-size: 0.85rem;
             color: rgba(255, 255, 255, 0.6);
-            margin-top: auto; /* 这是一个技巧：在 flex 布局中将页脚推到底部或保持间距 */
+            margin-top: auto;
             margin-bottom: 20px;
+            margin-left: auto;
+            margin-right: auto;
         }
 
         .badge-list {
@@ -383,11 +400,10 @@
         }
 
         .github-chart-container {
-            width: 100%;
-            max-width: 100%;
-            border-radius: 12px;
+            overflow-x: auto;
             margin-top: 15px;
-            overflow: hidden;
+            border-radius: 12px;
+            max-width: 100%;
         }
 
         .github-chart-caption {
@@ -494,12 +510,31 @@
         @media (max-width: 768px) {
             .dashboard {
                 flex-direction: column;
+                align-items: center;
             }
 
             body {
                 padding: 20px 10px;
             }
-            
+
+            .col-left, .col-right {
+                min-width: unset;
+                width: 92%;
+            }
+
+            .glass-card {
+                width: 100%;
+            }
+
+            .footer {
+                width: 92%;
+                max-width: 92%;
+            }
+
+            .link-grid {
+                grid-template-columns: repeat(3, 1fr);
+            }
+
             .echo-meta {
                 flex-direction: column;
                 align-items: flex-start;
@@ -581,9 +616,11 @@
             padding-bottom: 0px; /* 减少底部内边距 */
         }
         
-        .dashboard.compact-mode .avatar {
-            width: 100px; /* 缩小头像 */
+        .dashboard.compact-mode .avatar-wrapper {
+            width: 100px;
             height: 100px;
+            min-width: 100px;
+            min-height: 100px;
             margin-bottom: 0px;
         }
         
@@ -638,7 +675,9 @@
         <div class="col-left">
             <div class="glass-card">
                 <div class="profile">
-                    <img src=CONFIG.avatar class="avatar" alt="Avatar">
+                    <div class="avatar-wrapper">
+                        <img class="avatar" alt="Avatar" id="avatar-img">
+                    </div>
                     <h2 class="name">LucasAndrew</h2>
                     <p class="bio"><br><script>document.write(CONFIG.aphorism1);</script></p>
                     <div class="social-links">
@@ -731,7 +770,10 @@
                         <img src="网站图标" class="grid-icon">
                         <span>文字描述</span>
                     </a>
-                    -->
+                    <a href="https://rss.lris625.top/" target="_blank" class="grid-item">
+                        <img src="https://favicon.im/rss.lris625.top" class="grid-icon">
+                        <span>RSS</span>
+                    </a>
                 </div>
             </div>
 
@@ -902,9 +944,12 @@
                     const svgElement = container.querySelector('svg');
                     if (svgElement) {
                         svgElement.style.width = '100%';
-                        svgElement.style.height = '100%';
+                        svgElement.style.height = 'auto';
                         svgElement.style.display = 'block';
                     }
+
+                    // 为移动端添加点击显示提交信息
+                    setupChartTouch(container);
                 })
                 .catch(error => {
                     console.log("贡献图加载失败，使用备用图片", error);
@@ -914,6 +959,60 @@
                         caption.innerHTML = `数据加载失败，使用备用图表 · ${github_username}'s Github chart`;
                     }
                 });
+        }
+
+        // 贡献图点击显示提交信息（移动端支持）
+        function setupChartTouch(container) {
+            // 创建提示框元素
+            let tooltip = document.getElementById('chart-tooltip');
+            if (!tooltip) {
+                tooltip = document.createElement('div');
+                tooltip.id = 'chart-tooltip';
+                tooltip.style.cssText = 'position:fixed;padding:8px 14px;background:rgba(0,0,0,0.85);color:#fff;border-radius:8px;font-size:0.8rem;z-index:9999;pointer-events:none;display:none;white-space:nowrap;backdrop-filter:blur(4px);';
+                document.body.appendChild(tooltip);
+            }
+
+            const rects = container.querySelectorAll('svg rect[data-date]');
+            rects.forEach(rect => {
+                rect.style.cursor = 'pointer';
+                rect.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    const date = this.getAttribute('data-date');
+                    const count = this.getAttribute('data-count') || this.querySelector('title')?.textContent?.match(/\d+/)?.[0] || '0';
+                    tooltip.textContent = `${date}：${count} 次提交`;
+                    tooltip.style.display = 'block';
+
+                    const rectBounds = this.getBoundingClientRect();
+                    tooltip.style.left = rectBounds.left + rectBounds.width / 2 - tooltip.offsetWidth / 2 + 'px';
+                    tooltip.style.top = rectBounds.top - tooltip.offsetHeight - 8 + 'px';
+
+                    clearTimeout(tooltip._timer);
+                    tooltip._timer = setTimeout(() => { tooltip.style.display = 'none'; }, 3000);
+                });
+            });
+
+            // 如果没有 data-date 属性，改用 title 元素的内容
+            if (rects.length === 0) {
+                const allRects = container.querySelectorAll('svg rect');
+                allRects.forEach(rect => {
+                    const titleEl = rect.querySelector('title');
+                    if (!titleEl) return;
+                    rect.style.cursor = 'pointer';
+                    rect.addEventListener('click', function(e) {
+                        e.preventDefault();
+                        const text = titleEl.textContent || '';
+                        tooltip.textContent = text;
+                        tooltip.style.display = 'block';
+
+                        const rectBounds = this.getBoundingClientRect();
+                        tooltip.style.left = rectBounds.left + rectBounds.width / 2 - tooltip.offsetWidth / 2 + 'px';
+                        tooltip.style.top = rectBounds.top - tooltip.offsetHeight - 8 + 'px';
+
+                        clearTimeout(tooltip._timer);
+                        tooltip._timer = setTimeout(() => { tooltip.style.display = 'none'; }, 3000);
+                    });
+                });
+            }
         }
 
         // 7. 加载最新Ech0说说
@@ -1166,6 +1265,16 @@
             // 先初始化布局
             initLayout();
             
+            // 设置头像
+            const avatarImg = document.getElementById('avatar-img');
+            if (avatarImg) {
+                if (CONFIG.avartar && CONFIG.avartar.trim() !== '') {
+                    avatarImg.src = CONFIG.avartar;
+                } else {
+                    avatarImg.style.display = 'none';
+                }
+            }
+            
             // 然后加载其他数据
             updateStatus();
             calculateRuntime();
@@ -1174,6 +1283,14 @@
             loadGitHubChart();
             loadLatestEcho();
             document.body.style.backgroundImage = `url(${CONFIG.background})`;
+
+            // 点击空白处关闭贡献图提示
+            document.addEventListener('click', function(e) {
+                if (!e.target.closest('svg rect')) {
+                    const tooltip = document.getElementById('chart-tooltip');
+                    if (tooltip) tooltip.style.display = 'none';
+                }
+            });
         });
     </script>
 
