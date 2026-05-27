@@ -1,6 +1,6 @@
 const CONFIG = {
         name: 'LucasAndrew', // 站长名字
-        avartar: 'https://pic1.imgdb.cn/item/68fe309a3203f7be00a0c198.png', // 站长头像
+        avartar: 'https://pic1.imgdb.cn/item/68fe309a3203f7be00a0c198.png', // 站长头像123
         github_username: 'LucasAndrew0120', // GitHub 用户名
         icon: 'https://pic1.imgdb.cn/item/68fe309a3203f7be00a0c198.png', // 网站图标
         title: "Lucas的忘忧斋", // 网站标题

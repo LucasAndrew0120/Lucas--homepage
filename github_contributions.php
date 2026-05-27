@@ -236,13 +236,22 @@ function generateContributionsSVG($contributions_data) {
         $contributions_map[$day['date']] = $day['count'];
     }
     
-    // 生成SVG - 调整尺寸以适应容器
-    $svg_width = 100;
-    $svg_height = 40;
-    $cell_size = 18;  // 调整贡献块大小
-    $cell_margin = 4;
+    // 生成SVG - 根据数据动态计算尺寸
+    $cell_size = 14;
+    $cell_margin = 3;
+    $left_padding = 35;
+    $top_padding = 45;
+    $right_padding = 15;
+    $bottom_padding = 15;
     
-    $svg = '<svg width="' . $svg_width . '" height="' . $svg_height . '" xmlns="http://www.w3.org/2000/svg">';
+    // 计算周数
+    $total_days = (strtotime($today) - strtotime($start_date)) / 86400 + 1;
+    $total_weeks = ceil($total_days / 7);
+    
+    $svg_width = $left_padding + $total_weeks * ($cell_size + $cell_margin) + $right_padding;
+    $svg_height = $top_padding + 7 * ($cell_size + $cell_margin) + $bottom_padding;
+    
+    $svg = '<svg width="' . $svg_width . '" height="' . $svg_height . '" viewBox="0 0 ' . $svg_width . ' ' . $svg_height . '" xmlns="http://www.w3.org/2000/svg">';
     $svg .= '<style>
         .contrib-cell { 
             rx: 4; 
@@ -283,40 +292,41 @@ function generateContributionsSVG($contributions_data) {
         }
     </style>';
     
-    // 添加星期标签（左侧）- 调整间距
+    // 添加星期标签（左侧）
     $weekdays = ['日', '一', '二', '三', '四', '五', '六'];
     for ($i = 0; $i < 7; $i++) {
-        $y = 45 + $i * ($cell_size + $cell_margin) + $cell_size / 2 + 3;
-        $svg .= '<text x="30" y="' . $y . '" class="day-label" text-anchor="end">' . $weekdays[$i] . '</text>';
+        $y = $top_padding + $i * ($cell_size + $cell_margin) + $cell_size / 2 + 3;
+        $svg .= '<text x="' . ($left_padding - 8) . '" y="' . $y . '" class="day-label" text-anchor="end">' . $weekdays[$i] . '</text>';
     }
     
     // 生成贡献格子（最近30天，按周排列）
     $current_date = $start_date;
     $today = date('Y-m-d');
     $day_index = 0;
+    $last_month_label_x = -100; // 记录上一个月标签的x位置，防止重叠
     
     while (strtotime($current_date) <= strtotime($today)) {
         $count = isset($contributions_map[$current_date]) ? $contributions_map[$current_date] : 0;
         
-        // 根据贡献数确定绿色深浅（贡献越多越绿）
+        // 根据贡献数确定绿色深浅
         if ($count == 0) {
-            $color = '#1a1a1a'; // 黑色背景
+            $color = '#1a1a1a';
         } elseif ($count <= 2) {
-            $color = '#0d5c1a'; // 深绿
+            $color = '#0d5c1a';
         } elseif ($count <= 5) {
-            $color = '#1a7d2e'; // 中绿
+            $color = '#1a7d2e';
         } elseif ($count <= 10) {
-            $color = '#2ebf4f'; // 亮绿
+            $color = '#2ebf4f';
         } else {
-            $color = '#4aff7a'; // 最亮绿
+            $color = '#4aff7a';
         }
         
         // 计算位置（按周排列）
-        $week_day = date('w', strtotime($current_date)); // 0=周日, 1=周一, ...
-        $week_num = floor($day_index / 7); // 第几周
+        $week_day = date('w', strtotime($current_date));
+        $week_num = floor($day_index / 7);
         
-        $pos_x = 50 + $week_num * ($cell_size + $cell_margin);
-        $pos_y = 45 + $week_day * ($cell_size + $cell_margin);
+        $pos_x = $left_padding + $week_num * ($cell_size + $cell_margin);
+        $pos_y = $top_padding + $week_day * ($cell_size + $cell_margin);
         
         // 格式化日期显示
         $display_date = date('n月j日', strtotime($current_date));
@@ -332,29 +342,27 @@ function generateContributionsSVG($contributions_data) {
                 <title>' . $display_date . ' (' . $weekdays[$week_day] . '): ' . $count . ' 次提交</title>
             </rect>';
         
-        // 如果是每月的第一天，添加月份标签
+        // 如果是每月的第一天，添加月份标签（防止重叠）
         if (date('j', strtotime($current_date)) == 1 || $day_index == 0) {
-            $month = date('n月', strtotime($current_date));
-            $svg .= '<text x="' . ($pos_x + $cell_size/2) . '" y="30" class="month-label" text-anchor="middle">' . $month . '</text>';
+            $label_x = $pos_x + $cell_size / 2;
+            if ($label_x - $last_month_label_x >= 30) {
+                $month = date('n月', strtotime($current_date));
+                $svg .= '<text x="' . $label_x . '" y="30" class="month-label" text-anchor="middle">' . $month . '</text>';
+                $last_month_label_x = $label_x;
+            }
         }
         
-        // 移动到下一天
         $current_date = date('Y-m-d', strtotime($current_date . ' +1 day'));
         $day_index++;
     }
     
     // 移除标题和图例，只保留贡献格子
     
-    // 添加鼠标悬停提示区域 - 更明显的样式
-    $svg .= '<rect id="tooltip-bg" x="0" y="0" width="200" height="70" fill="rgba(10, 10, 10, 0.95)" rx="8" ry="8" 
-            stroke="#64ffda" stroke-width="2" visibility="hidden" filter="url(#shadow)"/>
-            <text id="tooltip-date" x="15" y="30" class="tooltip" visibility="hidden" font-size="14">日期: </text>
-            <text id="tooltip-count" x="15" y="55" class="tooltip" visibility="hidden" font-size="14">提交次数: </text>
-            <defs>
-                <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
-                    <feDropShadow dx="2" dy="2" stdDeviation="3" flood-color="#000" flood-opacity="0.5"/>
-                </filter>
-            </defs>';
+    // 添加鼠标悬停提示区域
+    $svg .= '<rect id="tooltip-bg" x="0" y="0" width="180" height="60" fill="rgba(10, 10, 10, 0.95)" rx="8" ry="8" 
+            stroke="#64ffda" stroke-width="2" visibility="hidden"/>
+            <text id="tooltip-date" x="12" y="25" class="tooltip" visibility="hidden" font-size="12">日期: </text>
+            <text id="tooltip-count" x="12" y="45" class="tooltip" visibility="hidden" font-size="12">提交次数: </text>';
     
     // 添加JavaScript交互
     $svg .= '<script type="application/ecmascript"><![CDATA[
@@ -374,26 +382,23 @@ function generateContributionsSVG($contributions_data) {
                 const count = this.getAttribute("data-count");
                 const day = this.getAttribute("data-display-day") || "";
                 
-                // 更新提示文本
-                tooltipDate.textContent = "日期: " + date + " (" + day + ")";
-                tooltipCount.textContent = "提交次数: " + count;
+                tooltipDate.textContent = date + " (" + day + ")";
+                tooltipCount.textContent = count + " 次提交";
                 
-                // 定位提示框（避免超出边界）
-                let x = rect.left - svgRect.left + rect.width/2;
-                let y = rect.top - svgRect.top - 70;
+                let x = rect.left - svgRect.left + rect.width/2 - 90;
+                let y = rect.top - svgRect.top - 65;
                 
-                if (y < 10) y = rect.bottom - svgRect.top + 10;
-                if (x > svgRect.width - 190) x = svgRect.width - 190;
-                if (x < 10) x = 10;
+                if (y < 5) y = rect.bottom - svgRect.top + 8;
+                if (x > svgRect.width - 170) x = svgRect.width - 170;
+                if (x < 5) x = 5;
                 
                 tooltipBg.setAttribute("x", x);
                 tooltipBg.setAttribute("y", y);
-                tooltipDate.setAttribute("x", x + 10);
-                tooltipDate.setAttribute("y", y + 25);
-                tooltipCount.setAttribute("x", x + 10);
-                tooltipCount.setAttribute("y", y + 45);
+                tooltipDate.setAttribute("x", x + 12);
+                tooltipDate.setAttribute("y", y + 22);
+                tooltipCount.setAttribute("x", x + 12);
+                tooltipCount.setAttribute("y", y + 42);
                 
-                // 显示提示框
                 tooltipBg.setAttribute("visibility", "visible");
                 tooltipDate.setAttribute("visibility", "visible");
                 tooltipCount.setAttribute("visibility", "visible");
