@@ -37,10 +37,21 @@
     <!-- Umami 统计脚本 -->
     <script>
         const umamiScript = document.createElement('script');
-        umamiScript.src = CONFIG.umami_domain + '/script.js';
+        umamiScript.defer = true;
+        umamiScript.src = CONFIG.umami_domain + '/script.js';  // 注意：需要完整的脚本URL
         umamiScript.setAttribute('data-website-id', CONFIG.umami_id);
-        umamiScript.async = true;
+        umamiScript.async = true;  // 通常也加上async
         document.head.appendChild(umamiScript);
+    </script>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const umamiScript = document.querySelector(`script[src="${CONFIG.umami_domain}/script.js"]`);
+            if (umamiScript && CONFIG && CONFIG.umami_id) {
+                umamiScript.setAttribute('data-website-id', CONFIG.umami_id);
+                
+            }
+        });
     </script>
 
     <script>
