@@ -1,6 +1,42 @@
-<html>
-<head><title>404 Not Found</title></head>
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <script src="config.js"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>404 Not Found</title>
+
+    <!-- Umami 统计脚本 -->
+    <script>
+        const umamiScript = document.createElement('script');
+        umamiScript.src = CONFIG.umami_domain + '/script.js';
+        umamiScript.setAttribute('data-website-id', CONFIG.umami_id);
+        umamiScript.async = true;
+        document.head.appendChild(umamiScript);
+    </script>
+
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background: #1a1a2e;
+            color: #eee;
+        }
+        .container { text-align: center; }
+        h1 { font-size: 4rem; color: #64ffda; margin-bottom: 10px; }
+        p { color: #888; margin-bottom: 20px; }
+        a { color: #64ffda; text-decoration: none; }
+    </style>
+</head>
 <body>
-<center><h1>404 Not Found</h1></center>
-<hr><center>nginx</center>
+    <div class="container">
+        <h1>404</h1>
+        <p>页面未找到 / Page Not Found</p>
+        <p><a href="/">返回首页</a></p>
+    </div>
 </body>
+</html>
