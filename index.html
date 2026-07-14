@@ -813,23 +813,71 @@
     </footer>
 
     <script>
-        // 1. 系统状态更新 (10分钟一次)
+        // 1. 系统状态更新 (优先 Komari API，回退到 status.php)
         function updateStatus() {
-            fetch('status.php')
+            if (CONFIG.komariApiUrl && CONFIG.komariNodeUuid) {
+                const recentUrl = CONFIG.komariApiUrl.replace(/\/+$/, '') + '/api/recent/' + CONFIG.komariNodeUuid;
+
+                fetch(recentUrl)
+                    .then(res => res.json())
+                    .then(res => {
+                        const status = res.data && res.data[0];
+                        if (!status) return;
+                        const cpu = Math.round(status.cpu.usage * 10) / 10;
+                        const mem = status.ram.total ? Math.round(status.ram.used / status.ram.total * 1000) / 10 : 0;
+                        const disk = status.disk.total ? Math.round(status.disk.used / status.disk.total * 1000) / 10 : 0;
+                        const net_in = status.network ? Math.round(status.network.down / 1024 * 10) / 10 : 0;
+                        const net_out = status.network ? Math.round(status.network.up / 1024 * 10) / 10 : 0;
+                        const uptimeSec = status.uptime || 0;
+                        const d = Math.floor(uptimeSec / 86400);
+                        const h = Math.floor((uptimeSec % 86400) / 3600);
+                        const m = Math.floor((uptimeSec % 3600) / 60);
+                        let uptimeStr = d > 0 ? d + '天 ' + h + '小时 ' + m + '分' : h + '小时 ' + m + '分';
+
+                        document.getElementById('cpu-val').innerText = cpu + '%';
+                        document.getElementById('cpu-bar').style.width = cpu + '%';
+                        document.getElementById('ram-val').innerText = mem + '%';
+                        document.getElementById('ram-bar').style.width = mem + '%';
+                        document.getElementById('disk-val').innerText = disk + '%';
+                        document.getElementById('disk-bar').style.width = disk + '%';
+                        document.getElementById('net-in').innerText = net_in;
+                        document.getElementById('net-out').innerText = net_out;
+                        document.getElementById('uptime-val').innerText = 'UP: ' + uptimeStr.toUpperCase();
+                    }).catch(e => console.log("Komari数据同步中..."));
+            } else {
+                fetch('status.php')
+                    .then(res => res.json())
+                    .then(data => {
+                        document.getElementById('cpu-val').innerText = data.cpu + '%';
+                        document.getElementById('cpu-bar').style.width = data.cpu + '%';
+                        document.getElementById('ram-val').innerText = data.mem + '%';
+                        document.getElementById('ram-bar').style.width = data.mem + '%';
+                        document.getElementById('disk-val').innerText = data.disk + '%';
+                        document.getElementById('disk-bar').style.width = data.disk + '%';
+                        document.getElementById('net-in').innerText = data.net_in;
+                        document.getElementById('net-out').innerText = data.net_out;
+                        document.getElementById('uptime-val').innerText = 'UP: ' + data.uptime.toUpperCase();
+                        document.getElementById('days-val').innerText = data.days_left + ' 天';
+                        document.getElementById('days-bar').style.width = Math.min((data.days_left / 30) * 100, 100) + '%';
+                    }).catch(e => console.log("服务器数据同步中..."));
+            }
+        }
+
+        // 1.1 续费倒计时更新 (通过 Komari nodes API 获取 expired_at)
+        function updateBilling() {
+            if (!CONFIG.komariApiUrl || !CONFIG.komariNodeUuid) return;
+            const nodesUrl = CONFIG.komariApiUrl.replace(/\/+$/, '') + '/api/nodes';
+            fetch(nodesUrl)
                 .then(res => res.json())
-                .then(data => {
-                    document.getElementById('cpu-val').innerText = data.cpu + '%';
-                    document.getElementById('cpu-bar').style.width = data.cpu + '%';
-                    document.getElementById('ram-val').innerText = data.mem + '%';
-                    document.getElementById('ram-bar').style.width = data.mem + '%';
-                    document.getElementById('disk-val').innerText = data.disk + '%';
-                    document.getElementById('disk-bar').style.width = data.disk + '%';
-                    document.getElementById('net-in').innerText = data.net_in;
-                    document.getElementById('net-out').innerText = data.net_out;
-                    document.getElementById('uptime-val').innerText = 'UP: ' + data.uptime.toUpperCase();
-                    document.getElementById('days-val').innerText = data.days_left + ' 天';
-                    document.getElementById('days-bar').style.width = Math.min((data.days_left / 30) * 100, 100) + '%';
-                }).catch(e => console.log("服务器数据同步中..."));
+                .then(res => {
+                    const node = res.data && res.data.find(n => n.uuid === CONFIG.komariNodeUuid);
+                    if (!node || !node.expired_at) return;
+                    const expired = new Date(node.expired_at);
+                    const now = new Date();
+                    const daysLeft = Math.max(0, Math.ceil((expired - now) / (1000 * 60 * 60 * 24)));
+                    document.getElementById('days-val').innerText = daysLeft + ' 天';
+                    document.getElementById('days-bar').style.width = Math.min((daysLeft / 30) * 100, 100) + '%';
+                }).catch(e => console.log("续费信息获取中..."));
         }
 
         // 2. 运行时间计算 (精确到天)
@@ -1251,8 +1299,10 @@
             }
         }
 
-        // 只有系统状态是 10 分钟刷一次，减轻服务器压力
-        setInterval(updateStatus, 600000); 
+        // 每30秒刷一次系统状态（Komari 节点数据 1 分钟更新一次）
+        setInterval(updateStatus, 30000);
+        // 每10分钟刷一次续费倒计时
+        setInterval(updateBilling, 600000);
         
         // 每2小时更新一次贡献图数据
         setInterval(loadGitHubChart, 7200000);
@@ -1277,6 +1327,7 @@
             
             // 然后加载其他数据
             updateStatus();
+            updateBilling();
             calculateRuntime();
             updateWeather();
             updateHitokoto();

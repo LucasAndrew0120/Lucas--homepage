@@ -18,5 +18,7 @@ const CONFIG = {
         background: '', // 主页背景图片的 URL
         echoApiUrl: '', // Echo API 的 URL
         up_date: '', // 站点的运行起始日期，格式为 "YYYY-MM-DD"
-        up_year: '' // 站点的运行起始年份，格式为 "YYYY"
+        up_year: '', // 站点的运行起始年份，格式为 "YYYY"
+        komariApiUrl: '', // Komari 地址，如 'https://your-komari.com'（留空则使用本地 status.php）
+        komariNodeUuid: '', // 要监控的节点 UUID（在 Komari 后台可查看）
 };
