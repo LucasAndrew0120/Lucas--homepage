@@ -7,3 +7,4 @@
 
 .stignore
 sync.ffs_db
+.playwright-mcp
