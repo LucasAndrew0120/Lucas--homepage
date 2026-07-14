@@ -9,3 +9,4 @@
 
 config.js
 sync.ffs_db
+.playwright-mcp
