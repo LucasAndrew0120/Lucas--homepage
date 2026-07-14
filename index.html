@@ -3,7 +3,7 @@
 
 <head>
     <meta charset="UTF-8">
-    <script src="config.js"></script>
+    <script src="config.js?v=2"></script>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <!--网站标题-->
     <script>
@@ -745,9 +745,9 @@
                 </div>
                 <div
                     style="display: flex; justify-content: space-between; font-size: 0.7rem; color: #888; margin-top: 5px;">
-                    <span><i class="fas fa-download"></i> <span id="net-in">0</span> KB/s</span>
+                    <span><i class="fas fa-download"></i> <span id="net-in">0</span></span>
                     <span id="uptime-val">UPTIME: LOADING</span>
-                    <span><i class="fas fa-upload"></i> <span id="net-out">0</span> KB/s</span>
+                    <span><i class="fas fa-upload"></i> <span id="net-out">0</span></span>
                 </div>
             </div>
 
@@ -824,77 +824,170 @@
     </footer>
 
     <script>
-        // 1. 系统状态更新 (10分钟一次)
+        // 格式化字节大小
+        function formatBytes(bytes) {
+            if (!bytes || bytes === 0) return '0 B';
+            const units = ['B', 'KB', 'MB', 'GB', 'TB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(1024));
+            return (bytes / Math.pow(1024, i)).toFixed(i > 0 ? 1 : 0) + ' ' + units[i];
+        }
+
+        // 构建 Komari API 地址（支持绝对URL和Nginx反代两种模式）
+        function komariUrl(path) {
+            const base = CONFIG.komariApiUrl.replace(/\/+$/, '');
+            if (base.startsWith('http')) {
+                return base + '/api' + path;
+            }
+            return base + path;
+        }
+
+        // 1. 系统状态更新 (优先 Komari API，回退到 status.php)
         function updateStatus() {
-            fetch('status.php')
-                .then(res => res.json())
-                .then(data => {
-                    document.getElementById('cpu-val').innerText = data.cpu + '%';
-                    document.getElementById('cpu-bar').style.width = data.cpu + '%';
-                    document.getElementById('ram-val').innerText = data.mem + '%';
-                    document.getElementById('ram-bar').style.width = data.mem + '%';
-                    document.getElementById('disk-val').innerText = data.disk + '%';
-                    document.getElementById('disk-bar').style.width = data.disk + '%';
-                    document.getElementById('net-in').innerText = data.net_in;
-                    document.getElementById('net-out').innerText = data.net_out;
-                    document.getElementById('uptime-val').innerText = 'UP: ' + data.uptime.toUpperCase();
-                    document.getElementById('days-val').innerText = data.days_left + ' 天';
-                    document.getElementById('days-bar').style.width = Math.min((data.days_left / 30) * 100, 100) + '%';
-                }).catch(e => console.log("服务器数据同步中..."));
+            if (CONFIG.komariApiUrl && CONFIG.komariNodeUuid) {
+                const url = komariUrl('/recent/' + CONFIG.komariNodeUuid);
+                fetch(url)
+                    .then(res => {
+                        if (!res.ok) throw new Error('HTTP ' + res.status);
+                        return res.json();
+                    })
+                    .then(res => {
+                        const status = res.data && res.data[0];
+                        if (!status) { console.warn('[Komari 系统状态] ⚠️ 返回数据为空'); return; }
+                        const cpu = Math.round(status.cpu.usage * 10) / 10;
+                        const mem = status.ram.total ? Math.round(status.ram.used / status.ram.total * 1000) / 10 : 0;
+                        const disk = status.disk.total ? Math.round(status.disk.used / status.disk.total * 1000) / 10 : 0;
+                        const net_down = status.network ? formatBytes(status.network.totalDown) : '0 B';
+                        const net_up = status.network ? formatBytes(status.network.totalUp) : '0 B';
+                        const uptimeSec = status.uptime || 0;
+                        const d = Math.floor(uptimeSec / 86400);
+                        const h = Math.floor((uptimeSec % 86400) / 3600);
+                        const m = Math.floor((uptimeSec % 3600) / 60);
+                        let uptimeStr = d > 0 ? d + '天 ' + h + '小时 ' + m + '分' : h + '小时 ' + m + '分';
+
+                        document.getElementById('cpu-val').innerText = cpu + '%';
+                        document.getElementById('cpu-bar').style.width = cpu + '%';
+                        document.getElementById('ram-val').innerText = mem + '%';
+                        document.getElementById('ram-bar').style.width = mem + '%';
+                        document.getElementById('disk-val').innerText = disk + '%';
+                        document.getElementById('disk-bar').style.width = disk + '%';
+                        document.getElementById('net-in').innerText = net_down;
+                        document.getElementById('net-out').innerText = net_up;
+                        document.getElementById('uptime-val').innerText = 'UP: ' + uptimeStr.toUpperCase();
+                        console.log('[Komari 系统状态] ✅ 获取成功 | CPU: ' + cpu + '% | 内存: ' + mem + '% | 磁盘: ' + disk + '% | 下行: ' + net_down + ' | 上行: ' + net_up);
+                    }).catch(e => console.error('[Komari 系统状态] ❌ 获取失败:', e.message, '| 请求地址:', url));
+            } else {
+                fetch('status.php')
+                    .then(res => {
+                        if (!res.ok) throw new Error('HTTP ' + res.status);
+                        return res.json();
+                    })
+                    .then(data => {
+                        document.getElementById('cpu-val').innerText = data.cpu + '%';
+                        document.getElementById('cpu-bar').style.width = data.cpu + '%';
+                        document.getElementById('ram-val').innerText = data.mem + '%';
+                        document.getElementById('ram-bar').style.width = data.mem + '%';
+                        document.getElementById('disk-val').innerText = data.disk + '%';
+                        document.getElementById('disk-bar').style.width = data.disk + '%';
+                        document.getElementById('net-in').innerText = data.net_in + ' KB/s';
+                        document.getElementById('net-out').innerText = data.net_out + ' KB/s';
+                        document.getElementById('uptime-val').innerText = 'UP: ' + data.uptime.toUpperCase();
+                        document.getElementById('days-val').innerText = data.days_left + ' 天';
+                        document.getElementById('days-bar').style.width = Math.min((data.days_left / 30) * 100, 100) + '%';
+                        console.log('[status.php 系统状态] ✅ 获取成功 | CPU: ' + data.cpu + '% | 内存: ' + data.mem + '% | 磁盘: ' + data.disk + '% | 续费: ' + data.days_left + '天');
+                    }).catch(e => console.error('[status.php 系统状态] ❌ 获取失败:', e.message));
+            }
+        }
+
+        // 1.1 续费倒计时更新 (通过 Komari nodes API 获取 expired_at)
+        function updateBilling() {
+            if (!CONFIG.komariApiUrl || !CONFIG.komariNodeUuid) return;
+            const url = komariUrl('/nodes');
+            fetch(url)
+                .then(res => {
+                    if (!res.ok) throw new Error('HTTP ' + res.status);
+                    return res.json();
+                })
+                .then(res => {
+                    const node = res.data && res.data.find(n => n.uuid === CONFIG.komariNodeUuid);
+                    if (!node) { console.warn('[Komari 续费信息] ⚠️ 未找到节点 ' + CONFIG.komariNodeUuid); return; }
+                    if (!node.expired_at) { console.warn('[Komari 续费信息] ⚠️ 节点未设置到期时间'); return; }
+                    const expired = new Date(node.expired_at);
+                    const now = new Date();
+                    const daysLeft = Math.max(0, Math.ceil((expired - now) / (1000 * 60 * 60 * 24)));
+                    document.getElementById('days-val').innerText = daysLeft + ' 天';
+                    document.getElementById('days-bar').style.width = Math.min((daysLeft / 30) * 100, 100) + '%';
+                    console.log('[Komari 续费信息] ✅ 获取成功 | 到期: ' + node.expired_at + ' | 剩余: ' + daysLeft + '天 | 计费周期: ' + (node.billing_cycle || '未设置') + '天');
+                }).catch(e => console.error('[Komari 续费信息] ❌ 获取失败:', e.message, '| 请求地址:', url));
         }
 
         // 2. 运行时间计算 (精确到天)
         function calculateRuntime() {
-            const startDate = new Date('2025-11-27'); // 改为你网站实际开始的日期
+            const startDate = new Date(CONFIG.up_date);
             const today = new Date();
             const timeDiff = today - startDate;
             const days = Math.floor(timeDiff / (1000 * 60 * 60 * 24));
             document.getElementById('runtime-val').innerText = `已在西洲停留 ${days} 个昼夜`;
+            console.log('[运行时间] ✅ 计算成功 | 起始: ' + CONFIG.up_date + ' | 已运行: ' + days + '天');
         }
 
         // 3. 天气更新 (高德 IP 定位 + 和风天气)
         async function updateWeather() {
-            const qweatherKey = CONFIG.qweatherKey;
-            const amapKey = CONFIG.amapKey; // 从 config.js 中获取高德API密钥
-
+            if (!CONFIG.qweatherKey || !CONFIG.amapKey) {
+                console.warn('[天气] ⚠️ 未配置和风天气或高德地图 API Key，跳过');
+                return;
+            }
             try {
-                const amapRes = await fetch(`https://restapi.amap.com/v3/ip?key=${amapKey}`);
+                const amapRes = await fetch(`https://restapi.amap.com/v3/ip?key=${CONFIG.amapKey}`);
                 const amapData = await amapRes.json();
                 let cityName = (amapData.status === '1' && typeof amapData.city === 'string') ? amapData.city : '北京';
+                console.log('[天气] 高德IP定位成功 | 城市: ' + cityName);
 
-                const geoRes = await fetch(`https://geoapi.qweather.com/v2/city/lookup?location=${cityName}&key=${qweatherKey}`);
+                const geoRes = await fetch(`https://geoapi.qweather.com/v2/city/lookup?location=${encodeURIComponent(cityName)}&key=${CONFIG.qweatherKey}`);
                 const geoData = await geoRes.json();
 
                 if (geoData.code === '200' && geoData.location) {
                     const locationId = geoData.location[0].id;
                     const displayCity = geoData.location[0].name;
-                    const weatherRes = await fetch(`https://devapi.qweather.com/v7/weather/now?location=${locationId}&key=${qweatherKey}`);
+                    const weatherRes = await fetch(`https://devapi.qweather.com/v7/weather/now?location=${locationId}&key=${CONFIG.qweatherKey}`);
                     const weatherData = await weatherRes.json();
 
                     if (weatherData.code === '200') {
                         document.getElementById('temp-val').innerText = weatherData.now.temp + '°C';
                         document.getElementById('loc-val').innerText = displayCity + ' · ' + weatherData.now.text;
+                        console.log('[天气] ✅ 获取成功 | ' + displayCity + ' | ' + weatherData.now.temp + '°C | ' + weatherData.now.text);
+                    } else {
+                        console.warn('[天气] ⚠️ 和风天气API返回异常 | code: ' + weatherData.code);
                     }
+                } else {
+                    console.warn('[天气] ⚠️ 城市查询失败 | 城市: ' + cityName + ' | code: ' + geoData.code);
                 }
             } catch (e) {
                 document.getElementById('temp-val').innerText = "N/A";
                 document.getElementById('loc-val').innerText = "定位失败";
+                console.error('[天气] ❌ 获取失败:', e.message);
             }
         }
 
         // 4. 一言更新
         function updateHitokoto() {
             fetch('https://v1.hitokoto.cn')
-                .then(res => res.json())
+                .then(res => {
+                    if (!res.ok) throw new Error('HTTP ' + res.status);
+                    return res.json();
+                })
                 .then(data => {
                     document.getElementById('hitokoto_text').innerText = data.hitokoto;
-                });
+                    console.log('[一言] ✅ 获取成功 | 来源: ' + (data.from || '未知') + ' | 内容: ' + data.hitokoto.substring(0, 30) + '...');
+                }).catch(e => console.error('[一言] ❌ 获取失败:', e.message));
         }
 
         // 5. 更新GitHub贡献图说明
         function updateGitHubChartInfo() {
             fetch('github_contributions.php')
-                .then(res => res.json())
+                .then(res => {
+                    if (!res.ok) throw new Error('HTTP ' + res.status);
+                    return res.json();
+                })
                 .then(data => {
                     if (data && data.last_updated) {
                         const lastUpdated = new Date(data.last_updated);
@@ -918,10 +1011,11 @@
                         if (caption) {
                             caption.innerHTML = `${updateText} · 最近30天共${totalContributions}次提交 · LucasAndrew0120's Github chart`;
                         }
+                        console.log('[GitHub 贡献信息] ✅ 获取成功 | 30天提交: ' + totalContributions + '次 | ' + updateText);
                     }
                 })
                 .catch(e => {
-                    console.log("GitHub贡献数据获取失败");
+                    console.error('[GitHub 贡献信息] ❌ 获取失败:', e.message);
                     const caption = document.getElementById('github-chart-caption');
                     if (caption) {
                         caption.innerHTML = '数据每两小时更新一次 · LucasAndrew0120\'s Github chart';
@@ -936,22 +1030,15 @@
             
             if (!container) return;
             
-            // 添加时间戳避免缓存
             fetch('github_contributions.php?format=svg&t=' + new Date().getTime())
                 .then(response => {
-                    if (!response.ok) {
-                        throw new Error('Network response was not ok');
-                    }
+                    if (!response.ok) throw new Error('HTTP ' + response.status);
                     return response.text();
                 })
                 .then(svgText => {
-                    // 直接插入SVG内容
                     container.innerHTML = svgText;
-                    
-                    // 更新说明信息
                     updateGitHubChartInfo();
                     
-                    // 确保SVG的宽度适应容器
                     const svgElement = container.querySelector('svg');
                     if (svgElement) {
                         svgElement.style.width = '100%';
@@ -959,12 +1046,11 @@
                         svgElement.style.display = 'block';
                     }
 
-                    // 为移动端添加点击显示提交信息
                     setupChartTouch(container);
+                    console.log('[GitHub 贡献图] ✅ 加载成功');
                 })
                 .catch(error => {
-                    console.log("贡献图加载失败，使用备用图片", error);
-                    // 备用方案：使用图片
+                    console.error('[GitHub 贡献图] ❌ 加载失败，使用备用图片:', error.message);
                     container.innerHTML = `<img src="https://ghchart.rshah.org/${github_username}" alt="GitHub Contributions" style="width:100%; border-radius:12px;">`;
                     if (caption) {
                         caption.innerHTML = `数据加载失败，使用备用图表 · ${github_username}'s Github chart`;
@@ -1031,97 +1117,55 @@
             const container = document.getElementById('echo-container');
             if (!container) return;
             
-            // 显示加载状态
             container.innerHTML = '<div class="echo-loading">正在加载最新说说...</div>';
             
-            // Ech0 API地址 - 使用用户提供的地址
-            const echoApiUrl = CONFIG.echoApiUrl;
+            if (!CONFIG.echoApiUrl) {
+                console.warn('[说说] ⚠️ 未配置 Echo API 地址，跳过');
+                container.innerHTML = '<div class="echo-loading">未配置说说 API</div>';
+                return;
+            }
             
-            // 请求参数：获取第一页，每页3条
-            const params = new URLSearchParams({
-                page: '1',
-                pageSize: '1'
-            });
+            const params = new URLSearchParams({ page: '1', pageSize: '1' });
+            const url = CONFIG.echoApiUrl + '?' + params;
             
-            // 添加调试信息
-            console.log('正在请求Ech0 API:', `${echoApiUrl}?${params}`);
-            
-            fetch(`${echoApiUrl}?${params}`, {
-                mode: 'cors', // 明确指定CORS模式
-                headers: {
-                    'Accept': 'application/json',
-                    'Content-Type': 'application/json'
-                }
+            fetch(url, {
+                headers: { 'Accept': 'application/json', 'Content-Type': 'application/json' }
             })
                 .then(response => {
-                    console.log('API响应状态:', response.status, response.statusText);
-                    if (!response.ok) {
-                        throw new Error(`HTTP error! status: ${response.status} - ${response.statusText}`);
-                    }
+                    if (!response.ok) throw new Error('HTTP ' + response.status);
                     return response.json();
                 })
                 .then(data => {
-                    console.log('API响应数据:', data);
-                    
-                    // 检查API响应格式 - 根据实际响应调整
                     let echoes = null;
                     
-                    // 格式1: {code: 1, data: {items: [...]}}
                     if (data.code === 1 && data.data && data.data.items && Array.isArray(data.data.items)) {
                         echoes = data.data.items;
-                    }
-                    // 格式2: {code: 1, data: [...]}
-                    else if (data.code === 1 && data.data && Array.isArray(data.data)) {
+                    } else if (data.code === 1 && data.data && Array.isArray(data.data)) {
                         echoes = data.data;
-                    }
-                    // 格式3: {data: {data: [...]}}
-                    else if (data.data && data.data.data && Array.isArray(data.data.data)) {
+                    } else if (data.data && data.data.data && Array.isArray(data.data.data)) {
                         echoes = data.data.data;
-                    }
-                    // 格式4: 直接返回数组
-                    else if (Array.isArray(data)) {
+                    } else if (Array.isArray(data)) {
                         echoes = data;
-                    }
-                    // 格式5: {data: [...]}
-                    else if (data.data && Array.isArray(data.data)) {
+                    } else if (data.data && Array.isArray(data.data)) {
                         echoes = data.data;
-                    }
-                    // 格式6: {echoes: [...]}
-                    else if (data.echoes && Array.isArray(data.echoes)) {
+                    } else if (data.echoes && Array.isArray(data.echoes)) {
                         echoes = data.echoes;
-                    }
-                    // 格式7: {items: [...]}
-                    else if (data.items && Array.isArray(data.items)) {
+                    } else if (data.items && Array.isArray(data.items)) {
                         echoes = data.items;
                     }
                     
                     if (echoes && echoes.length > 0) {
                         renderEchoes(echoes, container);
+                        const preview = echoes[0].content ? echoes[0].content.substring(0, 20) : '';
+                        console.log('[说说] ✅ 获取成功 | 条数: ' + echoes.length + ' | 最新: ' + preview + '...');
                     } else {
-                        console.log('数据格式详情:', {
-                            code: data.code,
-                            hasData: !!data.data,
-                            dataType: typeof data.data,
-                            dataKeys: data.data ? Object.keys(data.data) : '无data',
-                            isArray: Array.isArray(data.data),
-                            isItemsArray: data.data && data.data.items && Array.isArray(data.data.items)
-                        });
-                        throw new Error('未找到说说数据或数据格式不正确');
+                        console.warn('[说说] ⚠️ 数据格式不匹配', Object.keys(data));
+                        throw new Error('未找到说说数据');
                     }
                 })
                 .catch(error => {
-                    console.error("Ech0说说加载失败:", error);
-                    container.innerHTML = `
-                        <div class="echo-loading">
-                            <div>说说加载失败</div>
-                            <div style="font-size: 0.8rem; margin-top: 5px; color: #888;">
-                                错误: ${error.message}
-                            </div>
-                            <div style="font-size: 0.7rem; margin-top: 10px; color: #666;">
-                                请打开浏览器控制台查看详细错误信息
-                            </div>
-                        </div>
-                    `;
+                    console.error('[说说] ❌ 获取失败:', error.message, '| 请求地址:', url);
+                    container.innerHTML = '<div class="echo-loading">说说加载失败: ' + error.message + '</div>';
                 });
         }
 
@@ -1262,8 +1306,10 @@
             }
         }
 
-        // 只有系统状态是 10 分钟刷一次，减轻服务器压力
-        setInterval(updateStatus, 600000); 
+        // 每30秒刷一次系统状态（Komari 节点数据 1 分钟更新一次）
+        setInterval(updateStatus, 30000);
+        // 每10分钟刷一次续费倒计时
+        setInterval(updateBilling, 600000);
         
         // 每2小时更新一次贡献图数据
         setInterval(loadGitHubChart, 7200000);
@@ -1286,8 +1332,20 @@
                 }
             }
             
+            // 初始化调试信息概览
+            console.log('========== API 初始化 ==========');
+            console.log('[系统状态] ' + (CONFIG.komariApiUrl ? 'Komari (' + CONFIG.komariApiUrl + ')' : 'status.php (本地)'));
+            console.log('[续费信息] ' + (CONFIG.komariApiUrl ? 'Komari (' + CONFIG.komariNodeUuid + ')' : 'status.php (本地)'));
+            console.log('[天气] ' + (CONFIG.qweatherKey ? '已配置 (和风+高德)' : '❌ 未配置'));
+            console.log('[一言] ' + '已启用 (hitokoto.cn)');
+            console.log('[GitHub] ' + '已启用 (github_contributions.php)');
+            console.log('[说说] ' + (CONFIG.echoApiUrl ? '已配置 (' + CONFIG.echoApiUrl + ')' : '❌ 未配置'));
+            console.log('[运行时间] ' + (CONFIG.up_date ? '起始: ' + CONFIG.up_date : '❌ 未配置'));
+            console.log('===============================');
+            
             // 然后加载其他数据
             updateStatus();
+            updateBilling();
             calculateRuntime();
             updateWeather();
             updateHitokoto();
