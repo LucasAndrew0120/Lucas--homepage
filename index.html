@@ -965,7 +965,8 @@
                     return res.json();
                 })
                 .then(data => {
-                    document.getElementById('hitokoto_text').innerText = data.hitokoto;
+                    const from = data.from_who ? ' —— ' + data.from_who : (data.from ? ' —— 「' + data.from + '」' : '');
+                    document.getElementById('hitokoto_text').innerText = data.hitokoto + from;
                     console.log('[一言] ✅ 获取成功 | 来源: ' + (data.from || '未知') + ' | 内容: ' + data.hitokoto.substring(0, 30) + '...');
                 }).catch(e => console.error('[一言] ❌ 获取失败:', e.message));
         }
