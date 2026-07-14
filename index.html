@@ -4,6 +4,15 @@
 <head>
     <meta charset="UTF-8">
     <script src="config.js?v=2"></script>
+    <script>
+        (function() {
+            var r = document.documentElement;
+            if (CONFIG.fontSize_name) r.style.setProperty('--font-size-name', CONFIG.fontSize_name);
+            if (CONFIG.fontSize_bio) r.style.setProperty('--font-size-bio', CONFIG.fontSize_bio);
+            if (CONFIG.fontSize_hitokoto) r.style.setProperty('--font-size-hitokoto', CONFIG.fontSize_hitokoto);
+            if (CONFIG.fontSize_body) r.style.setProperty('--font-size-body', CONFIG.fontSize_body);
+        })();
+    </script>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <!--网站标题-->
     <script>
@@ -69,9 +78,12 @@
             --glass-bg: rgba(20, 20, 20, 0.25);
             --border: 1px solid rgba(255, 255, 255, 0.1);
             --trans-fast: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            /* 新增：统一的容器最大宽度变量 */
             --container-max-width: 1200px;
-            --compact-max-width: 550px; /* 增加紧凑模式宽度 */
+            --compact-max-width: 550px;
+            --font-size-name: 1.8rem;
+            --font-size-bio: 0.95rem;
+            --font-size-hitokoto: 0.95rem;
+            --font-size-body: 0.9;
         }
 
         /* 全局布局 */
@@ -91,7 +103,7 @@
             align-items: center;
             justify-content: flex-start;
             padding: 20px;
-            zoom: 0.9;
+            zoom: var(--font-size-body);
             transition: justify-content 0.5s ease;
             
             /* --- 找回背景图的关键：读取 config.js 中的背景配置 --- */
@@ -193,13 +205,13 @@
         }
 
         .name {
-            font-size: 1.8rem;
+            font-size: var(--font-size-name);
             margin-bottom: 10px;
             font-weight: bold;
         }
 
         .bio {
-            font-size: 0.95rem;
+            font-size: var(--font-size-bio);
             color: #ccc;
             line-height: 1.6;
             margin-bottom: 25px;
@@ -319,7 +331,7 @@
 
         /* 一言 */
         .hitokoto-text {
-            font-size: 0.95rem;
+            font-size: var(--font-size-hitokoto);
             line-height: 1.6;
             color: #eee;
             text-align: left;
