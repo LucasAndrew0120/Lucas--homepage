@@ -1,4 +1,4 @@
-# 忽略 Syncthing 同步记录
+﻿# 忽略 Syncthing 同步记录
 .stfolder/syncthing-folder-4ea140.txt
 # 忽略 config.js 文件，里面包含敏感信息
 
@@ -6,7 +6,6 @@
 .vscode/
 
 .stignore
-
 config.js
 sync.ffs_db
 .playwright-mcp
