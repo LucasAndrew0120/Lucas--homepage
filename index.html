@@ -63,11 +63,25 @@
             }
         }
 
+        function toggleHistoryModal() {
+            const modal = document.getElementById('historyModal');
+            if (modal.style.display === 'flex') {
+                modal.style.display = 'none';
+            } else {
+                modal.style.display = 'flex';
+                renderTimeline();
+            }
+        }
+
         // 点击遮罩层空白处也可关闭
         window.onclick = function(event) {
-            const modal = document.getElementById('settingsModal');
-            if (event.target == modal) {
-                modal.style.display = "none";
+            const settingsModal = document.getElementById('settingsModal');
+            const historyModal = document.getElementById('historyModal');
+            if (event.target == settingsModal) {
+                settingsModal.style.display = "none";
+            }
+            if (event.target == historyModal) {
+                historyModal.style.display = "none";
             }
         }
     </script>
@@ -649,7 +663,46 @@
             font-size: 1rem;
         }
         
-       
+        /* 时间轴样式 */
+        .timeline {
+            padding: 10px 0;
+            position: relative;
+        }
+        .timeline::before {
+            content: '';
+            position: absolute;
+            left: 12px;
+            top: 0;
+            bottom: 0;
+            width: 2px;
+            background: rgba(100, 255, 218, 0.3);
+        }
+        .timeline-item {
+            position: relative;
+            padding-left: 36px;
+            margin-bottom: 16px;
+        }
+        .timeline-dot {
+            position: absolute;
+            left: 6px;
+            top: 4px;
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            background: var(--accent-color);
+            border: 2px solid rgba(100, 255, 218, 0.5);
+            box-shadow: 0 0 6px var(--accent-color);
+        }
+        .timeline-date {
+            font-size: 0.7rem;
+            color: #888;
+            margin-bottom: 2px;
+        }
+        .timeline-content {
+            font-size: 0.85rem;
+            color: #ddd;
+            line-height: 1.5;
+        }
         
     </style>
 </head>
@@ -677,6 +730,17 @@
     </div>
 </div>
 
+<div id="historyModal" class="modal-overlay">
+    <div class="glass-card modal-content" style="max-width: 480px; max-height: 70vh; overflow-y: auto;">
+        <div class="stat-header">
+            <i class="fas fa-clock-rotate-left"></i>
+            <span>更新历史 / Changelog</span>
+            <span class="close-btn" onclick="toggleHistoryModal()">&times;</span>
+        </div>
+        <div class="timeline" id="timeline-container"></div>
+    </div>
+</div>
+
 <body>
 
     <div class="dashboard">
@@ -693,6 +757,8 @@
                             title="GitHub"><i class="fab fa-github"></i></a>
                         <a href="mailto:LucasAndrew0120@outlook.com" class="social-item" title="Email"><i
                                 class="fas fa-envelope"></i></a>
+                        <a href="javascript:void(0);" class="social-item" title="更新历史" onclick="toggleHistoryModal()"><i
+                                class="fas fa-clock-rotate-left"></i></a>
                         <a href="javascript:void(0);" class="social-item" title="设置" onclick="toggleModal()"><i 
                                 class="fas fa-cog"></i></a>
                     </div>
@@ -1387,6 +1453,37 @@
                 }
             });
         });
+
+        // 更新历史时间轴数据
+        var timelineData = [
+            { date: '2026.07.14', text: '接入 Komari 系统监控，替换本地 status.php；新增 API 调试日志' },
+            { date: '2026.07.14', text: '一言功能优化：显示来源出处、内容左对齐来源右对齐' },
+            { date: '2026.07.14', text: '字体大小配置项提取到 config.js（名字/简介/一言/页面缩放）' },
+            { date: '2026.06.02', text: '修复 Umami 统计追踪' },
+            { date: '2026.05.27', text: '修复 GitHub 贡献图显示、头像容器压缩问题、统一左右容器宽度' },
+            { date: '2026.03.04', text: '紧凑模式（仅个人信息和页脚）下的布局优化' },
+            { date: '2026.02.11', text: '更改 Umami 追踪 ID' },
+            { date: '2026.02.10', text: '增加设置页面，支持看板布局自定义' },
+            { date: '2026.02.08', text: 'API 密钥与代码分离，实现用户自定义配置' },
+            { date: '2026.01.20', text: '增加 GitHub 贡献图模块和 Echo 说说模块' },
+            { date: '2026.01.12', text: '降低毛玻璃效果，修复黑色遮罩' },
+            { date: '2026.01.09', text: '监控条改为圆角样式' },
+            { date: '2026.01.07', text: '站点上线，首个版本发布' }
+        ];
+
+        function renderTimeline() {
+            var container = document.getElementById('timeline-container');
+            if (!container || container.innerHTML) return;
+            var html = '';
+            timelineData.forEach(function(item) {
+                html += '<div class="timeline-item">';
+                html += '<div class="timeline-dot"></div>';
+                html += '<div class="timeline-date">' + item.date + '</div>';
+                html += '<div class="timeline-content">' + item.text + '</div>';
+                html += '</div>';
+            });
+            container.innerHTML = html;
+        }
     </script>
 
 </body>
