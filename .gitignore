@@ -8,3 +8,4 @@
 .stignore
 
 config.js
+sync.ffs_db
