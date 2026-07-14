@@ -331,10 +331,15 @@
         /* 一言 */
         .hitokoto-text {
             font-size: 0.95rem;
-            font-style: italic;
             line-height: 1.6;
             color: #eee;
-            min-height: 4em;
+        }
+        .hitokoto-source {
+            font-size: 1.0rem;
+            font-weight: bold;
+            font-style: normal;
+            color: #ccc;
+            margin-top: 8px;
         }
 
         .small-widgets {
@@ -965,8 +970,14 @@
                     return res.json();
                 })
                 .then(data => {
-                    const from = data.from_who ? ' —— ' + data.from_who : (data.from ? ' —— 「' + data.from + '」' : '');
-                    document.getElementById('hitokoto_text').innerText = data.hitokoto + from;
+                    const hitokotoEl = document.getElementById('hitokoto_text');
+                    let sourceHtml = '';
+                    if (data.from_who) {
+                        sourceHtml = '<div class="hitokoto-source">—— ' + data.from_who + '</div>';
+                    } else if (data.from) {
+                        sourceHtml = '<div class="hitokoto-source">—— 「' + data.from + '」</div>';
+                    }
+                    hitokotoEl.innerHTML = data.hitokoto + sourceHtml;
                     console.log('[一言] ✅ 获取成功 | 来源: ' + (data.from || '未知') + ' | 内容: ' + data.hitokoto.substring(0, 30) + '...');
                 }).catch(e => console.error('[一言] ❌ 获取失败:', e.message));
         }
