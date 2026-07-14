@@ -6,3 +6,4 @@
 .vscode/
 
 .stignore
+sync.ffs_db
