@@ -1451,19 +1451,8 @@
         updateWeather();
         updateHitokoto();
         loadLatestEcho();
+        loadGitHubChart();
         document.body.style.backgroundImage = `url(${CONFIG.background})`;
-
-        // GitHub 贡献图懒加载（首屏以下，滚动到才加载）
-        var githubObserver = new IntersectionObserver(function(entries) {
-            entries.forEach(function(entry) {
-                if (entry.isIntersecting) {
-                    loadGitHubChart();
-                    githubObserver.disconnect();
-                }
-            });
-        });
-        var githubCard = document.getElementById('github-card');
-        if (githubCard) { githubObserver.observe(githubCard); }
 
         // 点击空白处关闭贡献图提示
         document.addEventListener('click', function(e) {
