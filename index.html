@@ -1065,7 +1065,7 @@
                     
                     const svgElement = container.querySelector('svg');
                     if (svgElement) {
-                        svgElement.style.width = '100%';
+                        svgElement.style.maxWidth = '100%';
                         svgElement.style.height = 'auto';
                         svgElement.style.display = 'block';
                     }
@@ -1341,49 +1341,53 @@
         // 每30分钟更新一次说说数据
         setInterval(loadLatestEcho, 1800000);
 
-        // 在页面加载完成后执行初始化
-        document.addEventListener('DOMContentLoaded', function() {
-            // 先初始化布局
-            initLayout();
-            
-            // 设置头像
-            const avatarImg = document.getElementById('avatar-img');
-            if (avatarImg) {
-                if (CONFIG.avartar && CONFIG.avartar.trim() !== '') {
-                    avatarImg.src = CONFIG.avartar;
-                } else {
-                    avatarImg.style.display = 'none';
-                }
-            }
-            
-            // 初始化调试信息概览
-            console.log('========== API 初始化 ==========');
-            console.log('[系统状态] ' + (CONFIG.komariApiUrl ? 'Komari (' + CONFIG.komariApiUrl + ')' : 'status.php (本地)'));
-            console.log('[续费信息] ' + (CONFIG.komariApiUrl ? 'Komari (' + CONFIG.komariNodeUuid + ')' : 'status.php (本地)'));
-            console.log('[天气] ' + (CONFIG.qweatherKey ? '已配置 (和风+高德)' : '❌ 未配置'));
-            console.log('[一言] ' + '已启用 (hitokoto.cn)');
-            console.log('[GitHub] ' + '已启用 (github_contributions.php)');
-            console.log('[说说] ' + (CONFIG.echoApiUrl ? '已配置 (' + CONFIG.echoApiUrl + ')' : '❌ 未配置'));
-            console.log('[运行时间] ' + (CONFIG.up_date ? '起始: ' + CONFIG.up_date : '❌ 未配置'));
-            console.log('===============================');
-            
-            // 然后加载其他数据
-            updateStatus();
-            updateBilling();
-            calculateRuntime();
-            updateWeather();
-            updateHitokoto();
-            loadGitHubChart();
-            loadLatestEcho();
-            document.body.style.backgroundImage = `url(${CONFIG.background})`;
+        // 在页面加载完成后执行初始化（script 在 body 末尾，DOM 已就绪）
+        initLayout();
 
-            // 点击空白处关闭贡献图提示
-            document.addEventListener('click', function(e) {
-                if (!e.target.closest('svg rect')) {
-                    const tooltip = document.getElementById('chart-tooltip');
-                    if (tooltip) tooltip.style.display = 'none';
+        const avatarImg = document.getElementById('avatar-img');
+        if (avatarImg) {
+            if (CONFIG.avartar && CONFIG.avartar.trim() !== '') {
+                avatarImg.src = CONFIG.avartar;
+            } else {
+                avatarImg.style.display = 'none';
+            }
+        }
+
+        console.log('========== API 初始化 ==========');
+        console.log('[系统状态] ' + (CONFIG.komariApiUrl ? 'Komari (' + CONFIG.komariApiUrl + ')' : 'status.php (本地)'));
+        console.log('[续费信息] ' + (CONFIG.komariApiUrl ? 'Komari (' + CONFIG.komariNodeUuid + ')' : 'status.php (本地)'));
+        console.log('[天气] ' + (CONFIG.qweatherKey ? '已配置 (和风+高德)' : '❌ 未配置'));
+        console.log('[一言] ' + '已启用 (hitokoto.cn)');
+        console.log('[GitHub] ' + '已启用 (github_contributions.php)');
+        console.log('[说说] ' + (CONFIG.echoApiUrl ? '已配置 (' + CONFIG.echoApiUrl + ')' : '❌ 未配置'));
+        console.log('[运行时间] ' + (CONFIG.up_date ? '起始: ' + CONFIG.up_date : '❌ 未配置'));
+        console.log('===============================');
+
+        updateStatus();
+        updateBilling();
+        calculateRuntime();
+        updateWeather();
+        updateHitokoto();
+        loadLatestEcho();
+        document.body.style.backgroundImage = `url(${CONFIG.background})`;
+
+        // GitHub 贡献图懒加载
+        var githubObserver = new IntersectionObserver(function(entries) {
+            entries.forEach(function(entry) {
+                if (entry.isIntersecting) {
+                    loadGitHubChart();
+                    githubObserver.disconnect();
                 }
             });
+        });
+        var githubCard = document.getElementById('github-card');
+        if (githubCard) { githubObserver.observe(githubCard); }
+
+        document.addEventListener('click', function(e) {
+            if (!e.target.closest('svg rect')) {
+                const tooltip = document.getElementById('chart-tooltip');
+                if (tooltip) tooltip.style.display = 'none';
+            }
         });
     </script>
 
