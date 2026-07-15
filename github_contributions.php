@@ -393,11 +393,14 @@ function generateContributionsSVG($contributions_data) {
 }
 
 // ======= 主程序 =======
-// 设置响应头
 header('Content-Type: application/json');
 header('Access-Control-Allow-Origin: *');
 
-// 获取贡献数据
+// 手动刷新缓存
+if (isset($_GET['refresh']) && file_exists($cache_file)) {
+    unlink($cache_file);
+}
+
 $contributions_data = getGitHubContributions($github_username, $cache_file, $cache_time);
 
 // 如果需要SVG，可以生成
