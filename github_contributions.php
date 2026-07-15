@@ -4,8 +4,6 @@
  * 功能：从GitHub API获取用户贡献数据，缓存到本地文件，前端通过此接口获取数据
  */
 
-date_default_timezone_set('Asia/Shanghai');
-
 // ======= 配置区 =======
 $github_username = "LucasAndrew0120";  // GitHub用户名
 $cache_file = __DIR__ . '/github_contributions_cache.json';  // 缓存文件路径
