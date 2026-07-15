@@ -3,6 +3,17 @@
 
 <head>
     <meta charset="UTF-8">
+    <!-- 预连接关键 API 和资源域名，省去 TLS 握手时间 -->
+    <link rel="preconnect" href="https://server.lris625.top">
+    <link rel="preconnect" href="https://ech0.lris625.top">
+    <link rel="preconnect" href="https://v1.hitokoto.cn">
+    <link rel="preconnect" href="https://restapi.amap.com">
+    <link rel="preconnect" href="https://geoapi.qweather.com">
+    <link rel="preconnect" href="https://devapi.qweather.com">
+    <link rel="preconnect" href="https://pic1.imgdb.cn">
+    <link rel="dns-prefetch" href="https://pic.imgdb.cn">
+    <link rel="dns-prefetch" href="https://img.shields.io">
+    <link rel="preconnect" href="https://cdnjs.cloudflare.com">
     <script src="config.js?v=2"></script>
     <script>
         (function() {
@@ -120,8 +131,8 @@
             zoom: var(--font-size-body);
             transition: justify-content 0.5s ease;
             
-            /* --- 找回背景图的关键：读取 config.js 中的背景配置 --- */
-            background: url('https://api.onenight.me/api/bing/auto') no-repeat center center fixed; /* 示例图，如果是动态背景请确保这里正确 */
+            /* --- 背景图由 JS 动态设置 (CONFIG.background) --- */
+            background: no-repeat center center fixed;
             background-size: cover;
             color: white; /* 确保文字是白的，不会变成纯黑主题感 */
         }
@@ -840,10 +851,12 @@
                 <div class="stat-header">快捷入口 / Shortcuts</div>
                 <div class="link-grid">
                     <a href="https://blog.lris625.top/" target="_blank" class="grid-item">
-                        <img src="https://pic1.imgdb.cn/item/68fe309a3203f7be00a0c198.png" class="grid-icon">
+                        <img src="https://pic1.imgdb.cn/item/68fe309a3203f7be00a0c198.png" class="grid-icon" loading="lazy" decoding="async">
                         <span>个人博客</span>
                     </a>
-                    
+                    <a href="https://flink.lris625.top/" target="_blank" class="grid-item">
+                        <img src="https://pic.imgdb.cn/i/033pmw2QYnX5F4D7hg8rIA.webp" class="grid-icon" loading="lazy" decoding="async">
+                        <span>友链检测</span>
                     <!-- 
                     <a href="https://openlist.lris625.top/" target="_blank" class="grid-item">
                         <img src="https://res.oplist.org/logo/logo.svg" class="grid-icon">
@@ -857,7 +870,7 @@
                     -->
                     
                     <a href="https://ech0.lris625.top/" target="_blank" class="grid-item">
-                        <img src="https://pic1.imgdb.cn/item/695a8afca6ed793b783b6427.webp" class="grid-icon">
+                        <img src="https://pic1.imgdb.cn/item/695a8afca6ed793b783b6427.webp" class="grid-icon" loading="lazy" decoding="async">
                         <span>碎碎念</span>
                     </a>
                     <!-- 
@@ -894,13 +907,11 @@
         </div>
 
         <div class="badge-list">
-            <img src="https://img.shields.io/badge/Server-1Panel-orange?style=flat-square" alt="1Panel">
-            <img src="https://img.shields.io/badge/Web-OpenResty-009900?style=flat-square&logo=nginx" alt="OpenResty">
-
+            <img src="https://img.shields.io/badge/Server-1Panel-orange?style=flat-square" alt="1Panel" loading="lazy" decoding="async">
+            <img src="https://img.shields.io/badge/Web-OpenResty-009900?style=flat-square&logo=nginx" alt="OpenResty" loading="lazy" decoding="async">
             <img src="https://img.shields.io/badge/Crafted%20with-Gemini%20AI-4285f4?style=flat-square&logo=google-gemini&logoColor=white"
-                alt="Gemini AI">
-
-            <img src="https://img.shields.io/badge/Stats-Vercount-0078d7?style=flat-square" alt="Vercount">
+                alt="Gemini AI" loading="lazy" decoding="async">
+            <img src="https://img.shields.io/badge/Stats-Vercount-0078d7?style=flat-square" alt="Vercount" loading="lazy" decoding="async">
         </div>
 
         <div style="margin-top: 15px; font-size: 0.7rem; opacity: 0.5;">
@@ -1101,9 +1112,9 @@
                         const totalContributions = data.contributions?.total || 0;
                         const caption = document.getElementById('github-chart-caption');
                         if (caption) {
-                            caption.innerHTML = `${updateText} · 最近30天共${totalContributions}次提交 · LucasAndrew0120's Github chart`;
+                            caption.innerHTML = `${updateText} · 共${totalContributions}次提交 · LucasAndrew0120's Github chart`;
                         }
-                        console.log('[GitHub 贡献信息] ✅ 获取成功 | 30天提交: ' + totalContributions + '次 | ' + updateText);
+                        console.log('[GitHub 贡献信息] ✅ 获取成功 | 提交: ' + totalContributions + '次 | ' + updateText);
                     }
                 })
                 .catch(e => {
@@ -1133,7 +1144,7 @@
                     
                     const svgElement = container.querySelector('svg');
                     if (svgElement) {
-                        svgElement.style.width = '100%';
+                        svgElement.style.maxWidth = '100%';
                         svgElement.style.height = 'auto';
                         svgElement.style.display = 'block';
                     }
@@ -1409,49 +1420,57 @@
         // 每30分钟更新一次说说数据
         setInterval(loadLatestEcho, 1800000);
 
-        // 在页面加载完成后执行初始化
-        document.addEventListener('DOMContentLoaded', function() {
-            // 先初始化布局
-            initLayout();
-            
-            // 设置头像
-            const avatarImg = document.getElementById('avatar-img');
-            if (avatarImg) {
-                if (CONFIG.avartar && CONFIG.avartar.trim() !== '') {
-                    avatarImg.src = CONFIG.avartar;
-                } else {
-                    avatarImg.style.display = 'none';
-                }
-            }
-            
-            // 初始化调试信息概览
-            console.log('========== API 初始化 ==========');
-            console.log('[系统状态] ' + (CONFIG.komariApiUrl ? 'Komari (' + CONFIG.komariApiUrl + ')' : 'status.php (本地)'));
-            console.log('[续费信息] ' + (CONFIG.komariApiUrl ? 'Komari (' + CONFIG.komariNodeUuid + ')' : 'status.php (本地)'));
-            console.log('[天气] ' + (CONFIG.qweatherKey ? '已配置 (和风+高德)' : '❌ 未配置'));
-            console.log('[一言] ' + '已启用 (hitokoto.cn)');
-            console.log('[GitHub] ' + '已启用 (github_contributions.php)');
-            console.log('[说说] ' + (CONFIG.echoApiUrl ? '已配置 (' + CONFIG.echoApiUrl + ')' : '❌ 未配置'));
-            console.log('[运行时间] ' + (CONFIG.up_date ? '起始: ' + CONFIG.up_date : '❌ 未配置'));
-            console.log('===============================');
-            
-            // 然后加载其他数据
-            updateStatus();
-            updateBilling();
-            calculateRuntime();
-            updateWeather();
-            updateHitokoto();
-            loadGitHubChart();
-            loadLatestEcho();
-            document.body.style.backgroundImage = `url(${CONFIG.background})`;
+        // 在页面加载完成后执行初始化（script 在 body 末尾，DOM 已就绪）
+        initLayout();
 
-            // 点击空白处关闭贡献图提示
-            document.addEventListener('click', function(e) {
-                if (!e.target.closest('svg rect')) {
-                    const tooltip = document.getElementById('chart-tooltip');
-                    if (tooltip) tooltip.style.display = 'none';
+        // 设置头像
+        const avatarImg = document.getElementById('avatar-img');
+        if (avatarImg) {
+            if (CONFIG.avartar && CONFIG.avartar.trim() !== '') {
+                avatarImg.src = CONFIG.avartar;
+            } else {
+                avatarImg.style.display = 'none';
+            }
+        }
+
+        // 调试信息
+        console.log('========== API 初始化 ==========');
+        console.log('[系统状态] ' + (CONFIG.komariApiUrl ? 'Komari (' + CONFIG.komariApiUrl + ')' : 'status.php (本地)'));
+        console.log('[续费信息] ' + (CONFIG.komariApiUrl ? 'Komari (' + CONFIG.komariNodeUuid + ')' : 'status.php (本地)'));
+        console.log('[天气] ' + (CONFIG.qweatherKey ? '已配置 (和风+高德)' : '❌ 未配置'));
+        console.log('[一言] ' + '已启用 (hitokoto.cn)');
+        console.log('[GitHub] ' + '已启用 (github_contributions.php)');
+        console.log('[说说] ' + (CONFIG.echoApiUrl ? '已配置 (' + CONFIG.echoApiUrl + ')' : '❌ 未配置'));
+        console.log('[运行时间] ' + (CONFIG.up_date ? '起始: ' + CONFIG.up_date : '❌ 未配置'));
+        console.log('===============================');
+
+        // 首屏关键数据立即加载
+        updateStatus();
+        updateBilling();
+        calculateRuntime();
+        updateWeather();
+        updateHitokoto();
+        loadLatestEcho();
+        document.body.style.backgroundImage = `url(${CONFIG.background})`;
+
+        // GitHub 贡献图懒加载（首屏以下，滚动到才加载）
+        var githubObserver = new IntersectionObserver(function(entries) {
+            entries.forEach(function(entry) {
+                if (entry.isIntersecting) {
+                    loadGitHubChart();
+                    githubObserver.disconnect();
                 }
             });
+        });
+        var githubCard = document.getElementById('github-card');
+        if (githubCard) { githubObserver.observe(githubCard); }
+
+        // 点击空白处关闭贡献图提示
+        document.addEventListener('click', function(e) {
+            if (!e.target.closest('svg rect')) {
+                const tooltip = document.getElementById('chart-tooltip');
+                if (tooltip) tooltip.style.display = 'none';
+            }
         });
 
         // 更新历史时间轴数据

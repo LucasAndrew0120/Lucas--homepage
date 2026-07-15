@@ -218,7 +218,7 @@ function fetchFromGitHubEventsAPI($username) {
     return null;
 }
 
-// ======= 生成贡献图SVG（改进版：最近30天，黑色背景，绿色贡献块） =======
+// ======= 生成贡献图SVG（GitHub风格：7行×周列，日历周对齐） =======
 function generateContributionsSVG($contributions_data) {
     if (empty($contributions_data) || !isset($contributions_data['daily'])) {
         return '';
@@ -226,30 +226,34 @@ function generateContributionsSVG($contributions_data) {
     
     $daily_data = $contributions_data['daily'];
     
-    // 确定日期范围（最近30天）
+    // 以今天所在周六为最右列，向左推约25周填满容器
+    $end_weekday = date('w', strtotime(date('Y-m-d')));
+    $end_week_saturday = date('Y-m-d', strtotime(date('Y-m-d') . ' +' . (6 - $end_weekday) . ' days'));
+    $target_weeks = 25;
+    $start_date = date('Y-m-d', strtotime($end_week_saturday . ' -' . ($target_weeks * 7 - 1) . ' days'));
     $end_date = date('Y-m-d');
-    $start_date = date('Y-m-d', strtotime('-29 days')); // 30天包括今天
     
-    // 创建日期到贡献数的映射
     $contributions_map = [];
     foreach ($daily_data as $day) {
         $contributions_map[$day['date']] = $day['count'];
     }
     
-    // 生成SVG - 根据数据动态计算尺寸
     $cell_size = 14;
     $cell_margin = 3;
+    $step = $cell_size + $cell_margin;
     $left_padding = 35;
-    $top_padding = 45;
+    $top_padding = 20;
     $right_padding = 15;
-    $bottom_padding = 15;
+    $bottom_padding = 5;
     
-    // 计算周数
-    $total_days = (strtotime($today) - strtotime($start_date)) / 86400 + 1;
-    $total_weeks = ceil($total_days / 7);
+    // 起始周的周日
+    $start_weekday = date('w', strtotime($start_date));
+    $start_week_sunday = date('Y-m-d', strtotime($start_date . ' -' . $start_weekday . ' days'));
+    $total_days = (strtotime($end_week_saturday) - strtotime($start_week_sunday)) / 86400 + 1;
+    $total_weeks = $total_days / 7;
     
-    $svg_width = $left_padding + $total_weeks * ($cell_size + $cell_margin) + $right_padding;
-    $svg_height = $top_padding + 7 * ($cell_size + $cell_margin) + $bottom_padding;
+    $svg_width = $left_padding + $total_weeks * $step + $right_padding;
+    $svg_height = $top_padding + 7 * $step + $bottom_padding;
     
     $svg = '<svg width="' . $svg_width . '" height="' . $svg_height . '" viewBox="0 0 ' . $svg_width . ' ' . $svg_height . '" xmlns="http://www.w3.org/2000/svg">';
     $svg .= '<style>
@@ -262,17 +266,6 @@ function generateContributionsSVG($contributions_data) {
         .contrib-cell:hover {
             stroke: #64ffda;
             stroke-width: 2px;
-            /* 移除transform: scale(1.05); 和 filter: brightness(1.2); */
-        }
-        .contrib-text {
-            font-family: "LXGW WenKai Screen", Arial, sans-serif;
-            font-size: 12px;
-            fill: #ddd;
-        }
-        .tooltip {
-            font-family: "LXGW WenKai Screen", Arial, sans-serif;
-            font-size: 12px;
-            fill: white;
         }
         .month-label {
             font-family: "LXGW WenKai Screen", Arial, sans-serif;
@@ -285,30 +278,27 @@ function generateContributionsSVG($contributions_data) {
             font-size: 10px;
             fill: #999;
         }
-        .legend-label {
+        .tooltip {
             font-family: "LXGW WenKai Screen", Arial, sans-serif;
-            font-size: 10px;
-            fill: #bbb;
+            font-size: 12px;
+            fill: white;
         }
     </style>';
     
-    // 添加星期标签（左侧）
+    // 星期标签（左侧）
     $weekdays = ['日', '一', '二', '三', '四', '五', '六'];
     for ($i = 0; $i < 7; $i++) {
-        $y = $top_padding + $i * ($cell_size + $cell_margin) + $cell_size / 2 + 3;
+        $y = $top_padding + $i * $step + $cell_size / 2 + 3;
         $svg .= '<text x="' . ($left_padding - 8) . '" y="' . $y . '" class="day-label" text-anchor="end">' . $weekdays[$i] . '</text>';
     }
     
-    // 生成贡献格子（最近30天，按周排列）
-    $current_date = $start_date;
-    $today = date('Y-m-d');
-    $day_index = 0;
-    $last_month_label_x = -100; // 记录上一个月标签的x位置，防止重叠
+    // 格子
+    $current_date = $start_week_sunday;
+    $last_month_label_x = -100;
     
-    while (strtotime($current_date) <= strtotime($today)) {
+    while (strtotime($current_date) <= strtotime($end_week_saturday)) {
         $count = isset($contributions_map[$current_date]) ? $contributions_map[$current_date] : 0;
         
-        // 根据贡献数确定绿色深浅
         if ($count == 0) {
             $color = '#1a1a1a';
         } elseif ($count <= 2) {
@@ -321,89 +311,75 @@ function generateContributionsSVG($contributions_data) {
             $color = '#4aff7a';
         }
         
-        // 计算位置（按周排列）
+        // 按日历周排列
+        $days_since_sunday = (strtotime($current_date) - strtotime($start_week_sunday)) / 86400;
+        $week_num = floor($days_since_sunday / 7);
         $week_day = date('w', strtotime($current_date));
-        $week_num = floor($day_index / 7);
         
-        $pos_x = $left_padding + $week_num * ($cell_size + $cell_margin);
-        $pos_y = $top_padding + $week_day * ($cell_size + $cell_margin);
+        $pos_x = $left_padding + $week_num * $step;
+        $pos_y = $top_padding + $week_day * $step;
         
-        // 格式化日期显示
+        // 填充范围内的格子（今天之后的格子用暗色）
+        $in_range = (strtotime($current_date) >= strtotime($start_date) && strtotime($current_date) <= strtotime($end_date));
         $display_date = date('n月j日', strtotime($current_date));
-        $display_day = date('D', strtotime($current_date));
         
         $svg .= '<rect class="contrib-cell" x="' . $pos_x . '" y="' . $pos_y . '" 
                 width="' . $cell_size . '" height="' . $cell_size . '" 
-                fill="' . $color . '" 
-                data-count="' . $count . '" 
+                fill="' . ($in_range ? $color : '#111') . '" 
+                data-count="' . ($in_range ? $count : 0) . '" 
                 data-date="' . $current_date . '"
-                data-display-date="' . $display_date . '"
-                data-display-day="' . $display_day . '">
+                data-display-date="' . $display_date . '">
                 <title>' . $display_date . ' (' . $weekdays[$week_day] . '): ' . $count . ' 次提交</title>
             </rect>';
         
-        // 如果是每月的第一天，添加月份标签（防止重叠）
-        if (date('j', strtotime($current_date)) == 1 || $day_index == 0) {
+        // 月份标签
+        if ((date('j', strtotime($current_date)) == 1 && $in_range) || $current_date == $start_date) {
             $label_x = $pos_x + $cell_size / 2;
             if ($label_x - $last_month_label_x >= 30) {
                 $month = date('n月', strtotime($current_date));
-                $svg .= '<text x="' . $label_x . '" y="30" class="month-label" text-anchor="middle">' . $month . '</text>';
+                $svg .= '<text x="' . $label_x . '" y="' . ($top_padding - 6) . '" class="month-label" text-anchor="middle">' . $month . '</text>';
                 $last_month_label_x = $label_x;
             }
         }
         
         $current_date = date('Y-m-d', strtotime($current_date . ' +1 day'));
-        $day_index++;
     }
     
-    // 移除标题和图例，只保留贡献格子
-    
-    // 添加鼠标悬停提示区域
+    // 工具提示
     $svg .= '<rect id="tooltip-bg" x="0" y="0" width="180" height="60" fill="rgba(10, 10, 10, 0.95)" rx="8" ry="8" 
             stroke="#64ffda" stroke-width="2" visibility="hidden"/>
             <text id="tooltip-date" x="12" y="25" class="tooltip" visibility="hidden" font-size="12">日期: </text>
             <text id="tooltip-count" x="12" y="45" class="tooltip" visibility="hidden" font-size="12">提交次数: </text>';
     
-    // 添加JavaScript交互
     $svg .= '<script type="application/ecmascript"><![CDATA[
-        const svg = document.querySelector("svg");
-        const tooltipBg = document.getElementById("tooltip-bg");
-        const tooltipDate = document.getElementById("tooltip-date");
-        const tooltipCount = document.getElementById("tooltip-count");
-        
-        const cells = document.querySelectorAll(".contrib-cell");
-        
-        cells.forEach(cell => {
+        var svg = document.querySelector("svg");
+        var tooltipBg = document.getElementById("tooltip-bg");
+        var tooltipDate = document.getElementById("tooltip-date");
+        var tooltipCount = document.getElementById("tooltip-count");
+        var cells = document.querySelectorAll(".contrib-cell");
+        cells.forEach(function(cell) {
             cell.addEventListener("mouseenter", function(e) {
-                const rect = this.getBoundingClientRect();
-                const svgRect = svg.getBoundingClientRect();
-                
-                const date = this.getAttribute("data-display-date") || this.getAttribute("data-date");
-                const count = this.getAttribute("data-count");
-                const day = this.getAttribute("data-display-day") || "";
-                
-                tooltipDate.textContent = date + " (" + day + ")";
+                var r = this.getBoundingClientRect();
+                var sr = svg.getBoundingClientRect();
+                var date = this.getAttribute("data-display-date") || this.getAttribute("data-date");
+                var count = this.getAttribute("data-count");
+                tooltipDate.textContent = date;
                 tooltipCount.textContent = count + " 次提交";
-                
-                let x = rect.left - svgRect.left + rect.width/2 - 90;
-                let y = rect.top - svgRect.top - 65;
-                
-                if (y < 5) y = rect.bottom - svgRect.top + 8;
-                if (x > svgRect.width - 170) x = svgRect.width - 170;
+                var x = r.left - sr.left + r.width/2 - 90;
+                var y = r.top - sr.top - 65;
+                if (y < 5) y = r.bottom - sr.top + 8;
+                if (x > sr.width - 170) x = sr.width - 170;
                 if (x < 5) x = 5;
-                
                 tooltipBg.setAttribute("x", x);
                 tooltipBg.setAttribute("y", y);
                 tooltipDate.setAttribute("x", x + 12);
                 tooltipDate.setAttribute("y", y + 22);
                 tooltipCount.setAttribute("x", x + 12);
                 tooltipCount.setAttribute("y", y + 42);
-                
                 tooltipBg.setAttribute("visibility", "visible");
                 tooltipDate.setAttribute("visibility", "visible");
                 tooltipCount.setAttribute("visibility", "visible");
             });
-            
             cell.addEventListener("mouseleave", function() {
                 tooltipBg.setAttribute("visibility", "hidden");
                 tooltipDate.setAttribute("visibility", "hidden");
@@ -413,7 +389,6 @@ function generateContributionsSVG($contributions_data) {
     ]]></script>';
     
     $svg .= '</svg>';
-    
     return $svg;
 }
 
