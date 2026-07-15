@@ -117,8 +117,8 @@
             zoom: var(--font-size-body);
             transition: justify-content 0.5s ease;
             
-            /* --- 找回背景图的关键：读取 config.js 中的背景配置 --- */
-            background: url('https://api.onenight.me/api/bing/auto') no-repeat center center fixed; /* 示例图，如果是动态背景请确保这里正确 */
+            /* --- 背景图由 JS 动态设置 (CONFIG.background) --- */
+            background: no-repeat center center fixed;
             background-size: cover;
             color: white; /* 确保文字是白的，不会变成纯黑主题感 */
         }
