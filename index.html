@@ -14,7 +14,7 @@
     <link rel="dns-prefetch" href="https://pic.imgdb.cn">
     <link rel="dns-prefetch" href="https://img.shields.io">
     <link rel="preconnect" href="https://cdnjs.cloudflare.com">
-    <script src="config.js"></script>
+    <script src="config.js?v=2"></script>
     <script>
         (function() {
             var r = document.documentElement;
@@ -85,11 +85,25 @@
             }
         }
 
+        function toggleHistoryModal() {
+            const modal = document.getElementById('historyModal');
+            if (modal.style.display === 'flex') {
+                modal.style.display = 'none';
+            } else {
+                modal.style.display = 'flex';
+                renderTimeline();
+            }
+        }
+
         // 点击遮罩层空白处也可关闭
         window.onclick = function(event) {
-            const modal = document.getElementById('settingsModal');
-            if (event.target == modal) {
-                modal.style.display = "none";
+            const settingsModal = document.getElementById('settingsModal');
+            const historyModal = document.getElementById('historyModal');
+            if (event.target == settingsModal) {
+                settingsModal.style.display = "none";
+            }
+            if (event.target == historyModal) {
+                historyModal.style.display = "none";
             }
         }
     </script>
@@ -671,7 +685,46 @@
             font-size: 1rem;
         }
         
-       
+        /* 时间轴样式 */
+        .timeline {
+            padding: 10px 0;
+            position: relative;
+        }
+        .timeline::before {
+            content: '';
+            position: absolute;
+            left: 12px;
+            top: 0;
+            bottom: 0;
+            width: 2px;
+            background: rgba(100, 255, 218, 0.3);
+        }
+        .timeline-item {
+            position: relative;
+            padding-left: 36px;
+            margin-bottom: 16px;
+        }
+        .timeline-dot {
+            position: absolute;
+            left: 6px;
+            top: 4px;
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            background: var(--accent-color);
+            border: 2px solid rgba(100, 255, 218, 0.5);
+            box-shadow: 0 0 6px var(--accent-color);
+        }
+        .timeline-date {
+            font-size: 0.8rem;
+            color: #888;
+            margin-bottom: 2px;
+        }
+        .timeline-content {
+            font-size: 0.95rem;
+            color: #ddd;
+            line-height: 1.5;
+        }
         
     </style>
 </head>
@@ -699,6 +752,17 @@
     </div>
 </div>
 
+<div id="historyModal" class="modal-overlay">
+    <div class="glass-card modal-content" style="max-width: 480px; max-height: 70vh; overflow-y: auto;">
+        <div class="stat-header">
+            <i class="fas fa-clock-rotate-left"></i>
+            <span>更新历史 / Changelog</span>
+            <span class="close-btn" onclick="toggleHistoryModal()">&times;</span>
+        </div>
+        <div class="timeline" id="timeline-container"></div>
+    </div>
+</div>
+
 <body>
 
     <div class="dashboard">
@@ -715,6 +779,8 @@
                             title="GitHub"><i class="fab fa-github"></i></a>
                         <a href=CONFIG.email_url class="social-item" title="Email"><i
                                 class="fas fa-envelope"></i></a>
+                        <a href="javascript:void(0);" class="social-item" title="更新历史" onclick="toggleHistoryModal()"><i
+                                class="fas fa-clock-rotate-left"></i></a>
                         <a href="javascript:void(0);" class="social-item" title="设置" onclick="toggleModal()"><i 
                                 class="fas fa-cog"></i></a>
                     </div>
@@ -795,15 +861,44 @@
             <div class="glass-card" id="links-card">
                 <div class="stat-header">快捷入口 / Shortcuts</div>
                 <div class="link-grid">
-                    <!-- 示例快捷入口，实际使用时请替换 href、src 和文字描述，并根据需要增减条目
-                    <a href="网站地址" target="_blank" class="grid-item">
-                        <img src="网站图标" class="grid-icon">
-                        <span>文字描述</span>
+                    <a href="https://blog.lris625.top/" target="_blank" class="grid-item">
+                        <img src="https://pic1.imgdb.cn/item/68fe309a3203f7be00a0c198.png" class="grid-icon" loading="lazy" decoding="async">
+                        <span>个人博客</span>
+                    </a>
+                    <a href="https://flink.lris625.top/" target="_blank" class="grid-item">
+                        <img src="https://pic.imgdb.cn/i/033pmw2QYnX5F4D7hg8rIA.webp" class="grid-icon" loading="lazy" decoding="async">
+                        <span>友链检测</span>
+                    </a>
+                    <a href="https://server.lris625.top/" target="_blank" class="grid-item">
+                        <span class="grid-icon" style="font-size: 28px; line-height: 1;">🖥️</span>
+                        <span>Komari探针</span>
+                    </a>
+                    <!--
+                    <a href="https://openlist.lris625.top/" target="_blank" class="grid-item">
+                        <img src="https://res.oplist.org/logo/logo.svg" class="grid-icon">
+                        <span>OpenList</span>
+                    </a>
+                    <a href="https://speed.lris625.top/" target="_blank" class="grid-item">
+                        <img src="https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/svg/librespeed.svg"
+                            class="grid-icon">
+                        <span>LibreSpeed</span>
+                    </a> 
+                    -->
+
+                    <a href="https://ech0.lris625.top/" target="_blank" class="grid-item">
+                        <img src="https://pic1.imgdb.cn/item/695a8afca6ed793b783b6427.webp" class="grid-icon" loading="lazy" decoding="async">
+                        <span>碎碎念</span>
+                    </a>
+                    <!--
+                    <a href="https://read.lris625.top/" target="_blank" class="grid-item">
+                        <img src="https://favicon.im/read.lris625.top" class="grid-icon">
+                        <span>阅读</span>
                     </a>
                     <a href="https://rss.lris625.top/" target="_blank" class="grid-item">
-                        <img src="https://favicon.im/rss.lris625.top" class="grid-icon" loading="lazy" decoding="async">
+                        <img src="https://favicon.im/rss.lris625.top" class="grid-icon">
                         <span>RSS</span>
                     </a>
+                    -->
                 </div>
             </div>
 
@@ -849,11 +944,11 @@
             return (bytes / Math.pow(1024, i)).toFixed(i > 0 ? 1 : 0) + ' ' + units[i];
         }
 
-        // 构建 Komari API 地址（支持绝对URL和Nginx反代两种模式）
+        // 绝对地址通过同源 PHP 转发，避免浏览器被 Komari 的 CORS 策略拦截。
         function komariUrl(path) {
             const base = CONFIG.komariApiUrl.replace(/\/+$/, '');
             if (base.startsWith('http')) {
-                return base + '/api' + path;
+                return 'komari_proxy.php?path=' + encodeURIComponent(path);
             }
             return base + path;
         }
@@ -1033,9 +1128,9 @@
                         const totalContributions = data.contributions?.total || 0;
                         const caption = document.getElementById('github-chart-caption');
                         if (caption) {
-                            caption.innerHTML = `${updateText} · 最近30天共${totalContributions}次提交 · LucasAndrew0120's Github chart`;
+                            caption.innerHTML = `${updateText} · 共${totalContributions}次提交 · LucasAndrew0120's Github chart`;
                         }
-                        console.log('[GitHub 贡献信息] ✅ 获取成功 | 30天提交: ' + totalContributions + '次 | ' + updateText);
+                        console.log('[GitHub 贡献信息] ✅ 获取成功 | 提交: ' + totalContributions + '次 | ' + updateText);
                     }
                 })
                 .catch(e => {
@@ -1152,9 +1247,7 @@
             const params = new URLSearchParams({ page: '1', pageSize: '1' });
             const url = CONFIG.echoApiUrl + '?' + params;
             
-            fetch(url, {
-                headers: { 'Accept': 'application/json', 'Content-Type': 'application/json' }
-            })
+            fetch(url, { headers: { 'Accept': 'application/json' } })
                 .then(response => {
                     if (!response.ok) throw new Error('HTTP ' + response.status);
                     return response.json();
@@ -1251,32 +1344,35 @@
         }
 
         // 格式化时间
-        function formatTime(timeString) {
-            try {
-                const date = new Date(timeString);
-                const now = new Date();
-                const diffMs = now - date;
-                const diffMins = Math.floor(diffMs / (1000 * 60));
-                const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
-                const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
-                
-                if (diffMins < 1) {
-                    return '刚刚';
-                } else if (diffMins < 60) {
-                    return `${diffMins}分钟前`;
-                } else if (diffHours < 24) {
-                    return `${diffHours}小时前`;
-                } else if (diffDays < 7) {
-                    return `${diffDays}天前`;
-                } else {
-                    // 超过一周显示具体日期
-                    return date.toLocaleDateString('zh-CN', {
-                        month: 'short',
-                        day: 'numeric'
-                    });
-                }
-            } catch (e) {
-                return '未知时间';
+        function formatTime(timeValue) {
+            let normalizedValue = timeValue;
+            if (typeof timeValue === 'number' || /^\d+$/.test(String(timeValue))) {
+                const timestamp = Number(timeValue);
+                normalizedValue = timestamp < 1e12 ? timestamp * 1000 : timestamp;
+            }
+
+            const date = new Date(normalizedValue);
+            if (Number.isNaN(date.getTime())) return '未知时间';
+
+            const diffMs = Math.max(0, Date.now() - date.getTime());
+            const diffMins = Math.floor(diffMs / (1000 * 60));
+            const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+            const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+
+            if (diffMins < 1) {
+                return '刚刚';
+            } else if (diffMins < 60) {
+                return `${diffMins}分钟前`;
+            } else if (diffHours < 24) {
+                return `${diffHours}小时前`;
+            } else if (diffDays < 7) {
+                return `${diffDays}天前`;
+            } else {
+                return date.toLocaleDateString('zh-CN', {
+                    year: date.getFullYear() === new Date().getFullYear() ? undefined : 'numeric',
+                    month: 'short',
+                    day: 'numeric'
+                });
             }
         }
 
@@ -1344,6 +1440,7 @@
         // 在页面加载完成后执行初始化（script 在 body 末尾，DOM 已就绪）
         initLayout();
 
+        // 设置头像
         const avatarImg = document.getElementById('avatar-img');
         if (avatarImg) {
             if (CONFIG.avartar && CONFIG.avartar.trim() !== '') {
@@ -1353,6 +1450,7 @@
             }
         }
 
+        // 调试信息
         console.log('========== API 初始化 ==========');
         console.log('[系统状态] ' + (CONFIG.komariApiUrl ? 'Komari (' + CONFIG.komariApiUrl + ')' : 'status.php (本地)'));
         console.log('[续费信息] ' + (CONFIG.komariApiUrl ? 'Komari (' + CONFIG.komariNodeUuid + ')' : 'status.php (本地)'));
@@ -1363,6 +1461,7 @@
         console.log('[运行时间] ' + (CONFIG.up_date ? '起始: ' + CONFIG.up_date : '❌ 未配置'));
         console.log('===============================');
 
+        // 首屏关键数据立即加载
         updateStatus();
         updateBilling();
         calculateRuntime();
@@ -1372,12 +1471,44 @@
         loadGitHubChart();
         document.body.style.backgroundImage = `url(${CONFIG.background})`;
 
+        // 点击空白处关闭贡献图提示
         document.addEventListener('click', function(e) {
             if (!e.target.closest('svg rect')) {
                 const tooltip = document.getElementById('chart-tooltip');
                 if (tooltip) tooltip.style.display = 'none';
             }
         });
+
+        // 更新历史时间轴数据
+        var timelineData = [
+            { date: '2026.07.14', text: '接入 Komari 系统监控，替换本地 status.php；新增 API 调试日志' },
+            { date: '2026.07.14', text: '一言功能优化：显示来源出处、内容左对齐来源右对齐' },
+            { date: '2026.07.14', text: '字体大小配置项提取到 config.js（名字/简介/一言/页面缩放）' },
+            { date: '2026.06.02', text: '修复 Umami 统计追踪' },
+            { date: '2026.05.27', text: '修复 GitHub 贡献图显示、头像容器压缩问题、统一左右容器宽度' },
+            { date: '2026.03.04', text: '紧凑模式（仅个人信息和页脚）下的布局优化' },
+            { date: '2026.02.11', text: '更改 Umami 追踪 ID' },
+            { date: '2026.02.10', text: '增加设置页面，支持看板布局自定义' },
+            { date: '2026.02.08', text: 'API 密钥与代码分离，实现用户自定义配置' },
+            { date: '2026.01.20', text: '增加 GitHub 贡献图模块和 Echo 说说模块' },
+            { date: '2026.01.12', text: '降低毛玻璃效果，修复黑色遮罩' },
+            { date: '2026.01.09', text: '监控条改为圆角样式' },
+            { date: '2026.01.07', text: '站点上线，首个版本发布' }
+        ];
+
+        function renderTimeline() {
+            var container = document.getElementById('timeline-container');
+            if (!container || container.innerHTML) return;
+            var html = '';
+            timelineData.forEach(function(item) {
+                html += '<div class="timeline-item">';
+                html += '<div class="timeline-dot"></div>';
+                html += '<div class="timeline-date">' + item.date + '</div>';
+                html += '<div class="timeline-content">' + item.text + '</div>';
+                html += '</div>';
+            });
+            container.innerHTML = html;
+        }
     </script>
 
 </body>
