@@ -857,6 +857,11 @@
                     <a href="https://flink.lris625.top/" target="_blank" class="grid-item">
                         <img src="https://pic.imgdb.cn/i/033pmw2QYnX5F4D7hg8rIA.webp" class="grid-icon" loading="lazy" decoding="async">
                         <span>友链检测</span>
+                    </a>
+                    <a href="https://server.lris625.top/" target="_blank" class="grid-item">
+                        <span class="grid-icon" style="font-size: 28px; line-height: 1;">🖥️</span>
+                        <span>Komari探针</span>
+                    </a>
                     <!-- 
                     <a href="https://openlist.lris625.top/" target="_blank" class="grid-item">
                         <img src="https://res.oplist.org/logo/logo.svg" class="grid-icon">
@@ -928,11 +933,11 @@
             return (bytes / Math.pow(1024, i)).toFixed(i > 0 ? 1 : 0) + ' ' + units[i];
         }
 
-        // 构建 Komari API 地址（支持绝对URL和Nginx反代两种模式）
+        // 绝对地址通过同源 PHP 转发，避免浏览器被 Komari 的 CORS 策略拦截。
         function komariUrl(path) {
             const base = CONFIG.komariApiUrl.replace(/\/+$/, '');
             if (base.startsWith('http')) {
-                return base + '/api' + path;
+                return 'komari_proxy.php?path=' + encodeURIComponent(path);
             }
             return base + path;
         }
@@ -1231,9 +1236,7 @@
             const params = new URLSearchParams({ page: '1', pageSize: '1' });
             const url = CONFIG.echoApiUrl + '?' + params;
             
-            fetch(url, {
-                headers: { 'Accept': 'application/json', 'Content-Type': 'application/json' }
-            })
+            fetch(url, { headers: { 'Accept': 'application/json' } })
                 .then(response => {
                     if (!response.ok) throw new Error('HTTP ' + response.status);
                     return response.json();
@@ -1330,32 +1333,35 @@
         }
 
         // 格式化时间
-        function formatTime(timeString) {
-            try {
-                const date = new Date(timeString);
-                const now = new Date();
-                const diffMs = now - date;
-                const diffMins = Math.floor(diffMs / (1000 * 60));
-                const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
-                const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
-                
-                if (diffMins < 1) {
-                    return '刚刚';
-                } else if (diffMins < 60) {
-                    return `${diffMins}分钟前`;
-                } else if (diffHours < 24) {
-                    return `${diffHours}小时前`;
-                } else if (diffDays < 7) {
-                    return `${diffDays}天前`;
-                } else {
-                    // 超过一周显示具体日期
-                    return date.toLocaleDateString('zh-CN', {
-                        month: 'short',
-                        day: 'numeric'
-                    });
-                }
-            } catch (e) {
-                return '未知时间';
+        function formatTime(timeValue) {
+            let normalizedValue = timeValue;
+            if (typeof timeValue === 'number' || /^\d+$/.test(String(timeValue))) {
+                const timestamp = Number(timeValue);
+                normalizedValue = timestamp < 1e12 ? timestamp * 1000 : timestamp;
+            }
+
+            const date = new Date(normalizedValue);
+            if (Number.isNaN(date.getTime())) return '未知时间';
+
+            const diffMs = Math.max(0, Date.now() - date.getTime());
+            const diffMins = Math.floor(diffMs / (1000 * 60));
+            const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+            const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+
+            if (diffMins < 1) {
+                return '刚刚';
+            } else if (diffMins < 60) {
+                return `${diffMins}分钟前`;
+            } else if (diffHours < 24) {
+                return `${diffHours}小时前`;
+            } else if (diffDays < 7) {
+                return `${diffDays}天前`;
+            } else {
+                return date.toLocaleDateString('zh-CN', {
+                    year: date.getFullYear() === new Date().getFullYear() ? undefined : 'numeric',
+                    month: 'short',
+                    day: 'numeric'
+                });
             }
         }
 
