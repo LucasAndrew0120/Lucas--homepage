@@ -4,7 +4,7 @@ const CONFIG = {
 
         github_username: '', // GitHub 用户名
         github_url: '', // GitHub 主页链接
-        emmil_url: 'mailto: ', // 邮箱地址
+        email_url: 'mailto: ', // 邮箱地址
         icon: '', // 网站图标
         title: "", // 网站标题
         aphorism1: '', // 主页个人简介下方的格言或座右铭
@@ -19,7 +19,7 @@ const CONFIG = {
         echoApiUrl: '', // Echo API 的 URL
         up_date: '', // 站点的运行起始日期，格式为 "YYYY-MM-DD"
         up_year: '', // 站点的运行起始年份，格式为 "YYYY"
-        komariApiUrl: '', // Komari 地址（留空则使用本地 status.php）
+        komariApiUrl: '', // Komari 地址（纯静态站直连，需在 Komari 后台 cors_allowed_origins 加入本站域名；留空则隐藏监控数据）
         komariNodeUuid: '', // 要监控的节点 UUID（在 Komari 后台可查看）
         fontSize_name: '1.8rem', // 名字字号
         fontSize_bio: '0.95rem', // 简介字号

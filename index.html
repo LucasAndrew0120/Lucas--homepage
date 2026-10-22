@@ -775,9 +775,9 @@
                     <h2 class="name">LucasAndrew</h2>
                     <p class="bio"><br><script>document.write(CONFIG.aphorism1);</script></p>
                     <div class="social-links">
-                        <a href=CONFIG.github_url target="_blank" class="social-item"
+                        <a id="social-github" href="#" target="_blank" class="social-item"
                             title="GitHub"><i class="fab fa-github"></i></a>
-                        <a href=CONFIG.email_url class="social-item" title="Email"><i
+                        <a id="social-email" href="#" class="social-item" title="Email"><i
                                 class="fas fa-envelope"></i></a>
                         <a href="javascript:void(0);" class="social-item" title="更新历史" onclick="toggleHistoryModal()"><i
                                 class="fas fa-clock-rotate-left"></i></a>
@@ -1578,6 +1578,16 @@
             } else {
                 avatarImg.style.display = 'none';
             }
+        }
+
+        // 设置社交链接（缺省时回退到 GitHub 用户名拼出的地址）
+        const githubLink = document.getElementById('social-github');
+        if (githubLink) {
+            githubLink.href = CONFIG.github_url || (CONFIG.github_username ? 'https://github.com/' + CONFIG.github_username : '#');
+        }
+        const emailLink = document.getElementById('social-email');
+        if (emailLink) {
+            emailLink.href = CONFIG.email_url || '#';
         }
 
         // 调试信息
