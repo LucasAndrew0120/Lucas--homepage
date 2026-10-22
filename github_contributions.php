@@ -56,9 +56,29 @@ function getGitHubContributions($username, $cache_file, $cache_time) {
     ];
 }
 
-// ======= 从GitHub API获取数据 =======
+// ======= 从GitHub获取数据（按准确性优先级选择数据源） =======
 function fetchFromGitHubAPI($username) {
-    // 方法1：使用GitHub的GraphQL API（推荐，可以获取更详细的数据）
+    // 方法1：配置了Token时，优先使用官方GraphQL API（最准确）
+    global $github_token;
+    if (isset($github_token) && !empty($github_token)) {
+        $result = fetchFromGraphQL($username);
+        if ($result) {
+            return $result;
+        }
+    }
+    
+    // 方法2：抓取GitHub公开贡献页（无需Token，数据与官网贡献图完全一致）
+    $result = fetchFromContributionsPage($username);
+    if ($result) {
+        return $result;
+    }
+    
+    // 方法3：兜底，使用REST事件API（仅最近约30天公开事件，数据不准确）
+    return fetchFromGitHubEventsAPI($username);
+}
+
+// ======= 使用官方GraphQL API获取数据（需要Token） =======
+function fetchFromGraphQL($username) {
     $query = '
     {
       user(login: "' . $username . '") {
@@ -97,12 +117,84 @@ function fetchFromGitHubAPI($username) {
         return [
             'total' => $calendar['totalContributions'],
             'daily' => $contributions,
-            'weeks' => count($weeks)
+            'weeks' => count($weeks),
+            'source' => 'graphql'
         ];
     }
     
-    // 方法2：如果GraphQL失败，尝试使用REST API（获取最近事件）
-    return fetchFromGitHubEventsAPI($username);
+    return null;
+}
+
+// ======= 抓取GitHub公开贡献页（无需Token，与官网贡献图一致） =======
+function fetchFromContributionsPage($username) {
+    $url = 'https://github.com/users/' . rawurlencode($username) . '/contributions';
+    
+    $headers = [
+        'User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0 Safari/537.36',
+        'Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+        'Accept-Language: en-US,en;q=0.9'
+    ];
+    
+    $ch = curl_init();
+    curl_setopt($ch, CURLOPT_URL, $url);
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+    curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
+    curl_setopt($ch, CURLOPT_TIMEOUT, 15);
+    curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, true);
+    curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
+    
+    $html = curl_exec($ch);
+    $http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    curl_close($ch);
+    
+    if ($http_code != 200 || empty($html)) {
+        error_log("GitHub贡献页抓取失败，HTTP代码: " . $http_code);
+        return null;
+    }
+    
+    // 解析每个格子：日期 + 对应组件id（data-date 在 id 之前）
+    preg_match_all('/data-date="(\d{4}-\d{2}-\d{2})"\s+id="(contribution-day-component-[\d-]+)"/', $html, $day_matches, PREG_SET_ORDER);
+    
+    if (empty($day_matches)) {
+        error_log("GitHub贡献页解析失败：未找到日期格子");
+        return null;
+    }
+    
+    // 解析 tooltip：组件id -> 精确贡献次数（"No contributions on ..." 视为0）
+    $counts_by_id = [];
+    if (preg_match_all('/<tool-tip[^>]*for="(contribution-day-component-[\d-]+)"[^>]*>([^<]+)<\/tool-tip>/s', $html, $tip_matches, PREG_SET_ORDER)) {
+        foreach ($tip_matches as $tip) {
+            if (preg_match('/(\d+)\s+contribution/', $tip[2], $m)) {
+                $counts_by_id[$tip[1]] = (int)$m[1];
+            } else {
+                $counts_by_id[$tip[1]] = 0;
+            }
+        }
+    }
+    
+    $daily = [];
+    $total = 0;
+    foreach ($day_matches as $dm) {
+        $date = $dm[1];
+        $count = isset($counts_by_id[$dm[2]]) ? $counts_by_id[$dm[2]] : 0;
+        $daily[] = [
+            'date' => $date,
+            'count' => $count,
+            'weekday' => (int)date('w', strtotime($date))
+        ];
+        $total += $count;
+    }
+    
+    usort($daily, function($a, $b) {
+        return strcmp($a['date'], $b['date']);
+    });
+    
+    return [
+        'total' => $total,
+        'daily' => $daily,
+        'weeks' => (int)ceil(count($daily) / 7),
+        'source' => 'contributions-page'
+    ];
 }
 
 // ======= 使用GraphQL API请求 =======
