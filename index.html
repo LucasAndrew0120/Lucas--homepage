@@ -944,70 +944,71 @@
             return (bytes / Math.pow(1024, i)).toFixed(i > 0 ? 1 : 0) + ' ' + units[i];
         }
 
-        // 绝对地址通过同源 PHP 转发，避免浏览器被 Komari 的 CORS 策略拦截。
+        // Komari API 直连（纯静态部署，无服务端代理）
+        // 注意：Komari 的 CORS 中间件只处理 /api 开头的路径，前缀不能省
+        // 需在 Komari 后台把本站域名加入允许跨域列表（cors_allowed_origins）
         function komariUrl(path) {
-            const base = CONFIG.komariApiUrl.replace(/\/+$/, '');
-            if (base.startsWith('http')) {
-                return 'komari_proxy.php?path=' + encodeURIComponent(path);
-            }
-            return base + path;
+            const base = String(CONFIG.komariApiUrl || '').replace(/\/+$/, '').replace(/\/api$/, '');
+            if (!base) return '';
+            return base + '/api' + path;
         }
 
-        // 1. 系统状态更新 (优先 Komari API，回退到 status.php)
-        function updateStatus() {
-            if (CONFIG.komariApiUrl && CONFIG.komariNodeUuid) {
-                const url = komariUrl('/recent/' + CONFIG.komariNodeUuid);
-                fetch(url)
-                    .then(res => {
-                        if (!res.ok) throw new Error('HTTP ' + res.status);
-                        return res.json();
-                    })
-                    .then(res => {
-                        const status = res.data && res.data[0];
-                        if (!status) { console.warn('[Komari 系统状态] ⚠️ 返回数据为空'); return; }
-                        const cpu = Math.round(status.cpu.usage * 10) / 10;
-                        const mem = status.ram.total ? Math.round(status.ram.used / status.ram.total * 1000) / 10 : 0;
-                        const disk = status.disk.total ? Math.round(status.disk.used / status.disk.total * 1000) / 10 : 0;
-                        const net_down = status.network ? formatBytes(status.network.totalDown) : '0 B';
-                        const net_up = status.network ? formatBytes(status.network.totalUp) : '0 B';
-                        const uptimeSec = status.uptime || 0;
-                        const d = Math.floor(uptimeSec / 86400);
-                        const h = Math.floor((uptimeSec % 86400) / 3600);
-                        const m = Math.floor((uptimeSec % 3600) / 60);
-                        let uptimeStr = d > 0 ? d + '天 ' + h + '小时 ' + m + '分' : h + '小时 ' + m + '分';
+        // Komari 不可用时的占位显示
+        function setStatusPlaceholder(uptimeText) {
+            ['cpu-val', 'ram-val', 'disk-val'].forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.innerText = '--';
+            });
+            const netIn = document.getElementById('net-in');
+            const netOut = document.getElementById('net-out');
+            const uptimeEl = document.getElementById('uptime-val');
+            if (netIn) netIn.innerText = '--';
+            if (netOut) netOut.innerText = '--';
+            if (uptimeEl) uptimeEl.innerText = uptimeText || 'UPTIME: --';
+        }
 
-                        document.getElementById('cpu-val').innerText = cpu + '%';
-                        document.getElementById('cpu-bar').style.width = cpu + '%';
-                        document.getElementById('ram-val').innerText = mem + '%';
-                        document.getElementById('ram-bar').style.width = mem + '%';
-                        document.getElementById('disk-val').innerText = disk + '%';
-                        document.getElementById('disk-bar').style.width = disk + '%';
-                        document.getElementById('net-in').innerText = net_down;
-                        document.getElementById('net-out').innerText = net_up;
-                        document.getElementById('uptime-val').innerText = 'UP: ' + uptimeStr.toUpperCase();
-                        console.log('[Komari 系统状态] ✅ 获取成功 | CPU: ' + cpu + '% | 内存: ' + mem + '% | 磁盘: ' + disk + '% | 下行: ' + net_down + ' | 上行: ' + net_up);
-                    }).catch(e => console.error('[Komari 系统状态] ❌ 获取失败:', e.message, '| 请求地址:', url));
-            } else {
-                fetch('status.php')
-                    .then(res => {
-                        if (!res.ok) throw new Error('HTTP ' + res.status);
-                        return res.json();
-                    })
-                    .then(data => {
-                        document.getElementById('cpu-val').innerText = data.cpu + '%';
-                        document.getElementById('cpu-bar').style.width = data.cpu + '%';
-                        document.getElementById('ram-val').innerText = data.mem + '%';
-                        document.getElementById('ram-bar').style.width = data.mem + '%';
-                        document.getElementById('disk-val').innerText = data.disk + '%';
-                        document.getElementById('disk-bar').style.width = data.disk + '%';
-                        document.getElementById('net-in').innerText = data.net_in + ' KB/s';
-                        document.getElementById('net-out').innerText = data.net_out + ' KB/s';
-                        document.getElementById('uptime-val').innerText = 'UP: ' + data.uptime.toUpperCase();
-                        document.getElementById('days-val').innerText = data.days_left + ' 天';
-                        document.getElementById('days-bar').style.width = Math.min((data.days_left / 30) * 100, 100) + '%';
-                        console.log('[status.php 系统状态] ✅ 获取成功 | CPU: ' + data.cpu + '% | 内存: ' + data.mem + '% | 磁盘: ' + data.disk + '% | 续费: ' + data.days_left + '天');
-                    }).catch(e => console.error('[status.php 系统状态] ❌ 获取失败:', e.message));
+        // 1. 系统状态更新 (Komari API)
+        function updateStatus() {
+            if (!CONFIG.komariApiUrl || !CONFIG.komariNodeUuid) {
+                console.warn('[系统状态] ⚠️ 未配置 Komari，纯静态模式下没有本地降级方案');
+                setStatusPlaceholder('UPTIME: 未配置');
+                return;
             }
+            const url = komariUrl('/recent/' + CONFIG.komariNodeUuid);
+            fetch(url)
+                .then(res => {
+                    if (!res.ok) throw new Error('HTTP ' + res.status);
+                    return res.json();
+                })
+                .then(res => {
+                    const status = res.data && res.data[0];
+                    if (!status) { console.warn('[Komari 系统状态] ⚠️ 返回数据为空'); return; }
+                    const cpu = Math.round(status.cpu.usage * 10) / 10;
+                    const mem = status.ram.total ? Math.round(status.ram.used / status.ram.total * 1000) / 10 : 0;
+                    const disk = status.disk.total ? Math.round(status.disk.used / status.disk.total * 1000) / 10 : 0;
+                    const net_down = status.network ? formatBytes(status.network.totalDown) : '0 B';
+                    const net_up = status.network ? formatBytes(status.network.totalUp) : '0 B';
+                    const uptimeSec = status.uptime || 0;
+                    const d = Math.floor(uptimeSec / 86400);
+                    const h = Math.floor((uptimeSec % 86400) / 3600);
+                    const m = Math.floor((uptimeSec % 3600) / 60);
+                    let uptimeStr = d > 0 ? d + '天 ' + h + '小时 ' + m + '分' : h + '小时 ' + m + '分';
+
+                    document.getElementById('cpu-val').innerText = cpu + '%';
+                    document.getElementById('cpu-bar').style.width = cpu + '%';
+                    document.getElementById('ram-val').innerText = mem + '%';
+                    document.getElementById('ram-bar').style.width = mem + '%';
+                    document.getElementById('disk-val').innerText = disk + '%';
+                    document.getElementById('disk-bar').style.width = disk + '%';
+                    document.getElementById('net-in').innerText = net_down;
+                    document.getElementById('net-out').innerText = net_up;
+                    document.getElementById('uptime-val').innerText = 'UP: ' + uptimeStr.toUpperCase();
+                    console.log('[Komari 系统状态] ✅ 获取成功 | CPU: ' + cpu + '% | 内存: ' + mem + '% | 磁盘: ' + disk + '% | 下行: ' + net_down + ' | 上行: ' + net_up);
+                }).catch(e => {
+                    console.error('[Komari 系统状态] ❌ 获取失败:', e.message, '| 请求地址:', url);
+                    console.error('[Komari 系统状态] 若为 CORS 错误，请在 Komari 后台设置 cors_allowed_origins 加入本站域名: ' + location.origin);
+                    setStatusPlaceholder('UPTIME: 连接失败');
+                });
         }
 
         // 1.1 续费倒计时更新 (通过 Komari nodes API 获取 expired_at)
@@ -1100,64 +1101,191 @@
                 }).catch(e => console.error('[一言] ❌ 获取失败:', e.message));
         }
 
-        // 5. 更新GitHub贡献图说明
-        function updateGitHubChartInfo() {
-            fetch('github_contributions.php')
+        // ===== GitHub 贡献图（纯前端方案：公共 CORS API + localStorage 缓存 + JS 生成 SVG）=====
+        const GH_CACHE_KEY = 'gh_contrib_v1_' + (CONFIG.github_username || '');
+        const GH_CACHE_TTL = 2 * 60 * 60 * 1000; // 2 小时
+
+        function readGHCache() {
+            try {
+                const raw = localStorage.getItem(GH_CACHE_KEY);
+                if (!raw) return null;
+                const parsed = JSON.parse(raw);
+                if (!parsed || !parsed.fetchedAt || !parsed.data || !parsed.data.days) return null;
+                return parsed;
+            } catch (e) {
+                return null;
+            }
+        }
+
+        function writeGHCache(entry) {
+            try {
+                localStorage.setItem(GH_CACHE_KEY, JSON.stringify(entry));
+            } catch (e) {
+                console.warn('[GitHub 贡献图] ⚠️ 缓存写入失败:', e.message);
+            }
+        }
+
+        // 拉取贡献数据：优先本地缓存，过期后请求公共 API；接口失败时回退过期缓存
+        function fetchContributions() {
+            const cached = readGHCache();
+            if (cached && Date.now() - cached.fetchedAt < GH_CACHE_TTL) {
+                return Promise.resolve({ data: cached.data, fetchedAt: cached.fetchedAt });
+            }
+            const username = encodeURIComponent(CONFIG.github_username || '');
+            const url = 'https://github-contributions-api.jogruber.de/v4/' + username + '?y=last';
+            return fetch(url)
                 .then(res => {
                     if (!res.ok) throw new Error('HTTP ' + res.status);
                     return res.json();
                 })
-                .then(data => {
-                    if (data && data.last_updated) {
-                        const lastUpdated = new Date(data.last_updated);
-                        const now = new Date();
-                        const diffHours = Math.floor((now - lastUpdated) / (1000 * 60 * 60));
-                        
-                        let updateText = '数据已缓存';
-                        if (diffHours < 1) {
-                            updateText = '数据刚刚更新';
-                        } else if (diffHours === 1) {
-                            updateText = '数据1小时前更新';
-                        } else if (diffHours < 24) {
-                            updateText = `数据${diffHours}小时前更新`;
-                        } else {
-                            const diffDays = Math.floor(diffHours / 24);
-                            updateText = `数据${diffDays}天前更新`;
-                        }
-                        
-                        const totalContributions = data.contributions?.total || 0;
-                        const caption = document.getElementById('github-chart-caption');
-                        if (caption) {
-                            caption.innerHTML = `${updateText} · 共${totalContributions}次提交 · LucasAndrew0120's Github chart`;
-                        }
-                        console.log('[GitHub 贡献信息] ✅ 获取成功 | 提交: ' + totalContributions + '次 | ' + updateText);
-                    }
+                .then(json => {
+                    const data = normalizeContributions(json);
+                    if (!data.days.length) throw new Error('返回数据为空');
+                    const entry = { fetchedAt: Date.now(), data: data };
+                    writeGHCache(entry);
+                    return entry;
                 })
-                .catch(e => {
-                    console.error('[GitHub 贡献信息] ❌ 获取失败:', e.message);
-                    const caption = document.getElementById('github-chart-caption');
-                    if (caption) {
-                        caption.innerHTML = '数据每两小时更新一次 · LucasAndrew0120\'s Github chart';
+                .catch(err => {
+                    if (cached) {
+                        console.warn('[GitHub 贡献图] ⚠️ 接口请求失败，使用过期缓存:', err.message);
+                        return { data: cached.data, fetchedAt: cached.fetchedAt };
                     }
+                    throw err;
                 });
         }
 
-        // 6. 动态加载GitHub贡献图SVG
+        function normalizeContributions(json) {
+            const rawList = (json && Array.isArray(json.contributions)) ? json.contributions : [];
+            const days = rawList
+                .filter(d => d && typeof d.date === 'string')
+                .map(d => ({ date: d.date, count: Number(d.count) || 0 }))
+                .sort((a, b) => a.date < b.date ? -1 : (a.date > b.date ? 1 : 0));
+            const total = (json && json.total && typeof json.total.lastYear === 'number')
+                ? json.total.lastYear
+                : days.reduce((sum, d) => sum + d.count, 0);
+            return { days: days, total: total };
+        }
+
+        // ---- 日期工具（按本地时区，避免 UTC 偏移导致格子错位）----
+        function pad2(n) { return n < 10 ? '0' + n : '' + n; }
+        function toDateKey(d) { return d.getFullYear() + '-' + pad2(d.getMonth() + 1) + '-' + pad2(d.getDate()); }
+        function shiftDays(d, n) { return new Date(d.getFullYear(), d.getMonth(), d.getDate() + n); }
+        function dayDiff(a, b) { return Math.round((b.getTime() - a.getTime()) / 86400000); }
+
+        function contributionColor(count) {
+            if (!count) return '#1a1a1a';
+            if (count <= 2) return '#0d5c1a';
+            if (count <= 5) return '#1a7d2e';
+            if (count <= 10) return '#2ebf4f';
+            return '#4aff7a';
+        }
+
+        // 生成 GitHub 风格贡献图（7 行 × 周列，日历周对齐，与旧 PHP 版一致）
+        function buildContributionsSVG(data) {
+            const counts = {};
+            data.days.forEach(d => { counts[d.date] = d.count; });
+
+            const today = new Date();
+            const endWeekSaturday = shiftDays(today, 6 - today.getDay());
+            const targetWeeks = 25;
+            const startDate = shiftDays(endWeekSaturday, -(targetWeeks * 7 - 1));
+            const startWeekSunday = shiftDays(startDate, -startDate.getDay());
+            const totalWeeks = Math.round((dayDiff(startWeekSunday, endWeekSaturday) + 1) / 7);
+
+            const cellSize = 14;
+            const cellMargin = 3;
+            const step = cellSize + cellMargin;
+            const leftPadding = 35;
+            const topPadding = 20;
+            const rightPadding = 15;
+            const bottomPadding = 5;
+
+            const svgWidth = leftPadding + totalWeeks * step + rightPadding;
+            const svgHeight = topPadding + 7 * step + bottomPadding;
+
+            let svg = '<svg width="' + svgWidth + '" height="' + svgHeight + '" viewBox="0 0 ' + svgWidth + ' ' + svgHeight + '" xmlns="http://www.w3.org/2000/svg">';
+            svg += '<style>'
+                + '.contrib-cell { rx: 4; ry: 4; transition: stroke 0.2s ease; cursor: pointer; }'
+                + '.contrib-cell:hover { stroke: #64ffda; stroke-width: 2px; }'
+                + '.month-label { font-family: "LXGW WenKai Screen", Arial, sans-serif; font-size: 11px; fill: #aaa; font-weight: 500; }'
+                + '.day-label { font-family: "LXGW WenKai Screen", Arial, sans-serif; font-size: 10px; fill: #999; }'
+                + '</style>';
+
+            // 星期标签（左侧）
+            const weekdays = ['日', '一', '二', '三', '四', '五', '六'];
+            for (let i = 0; i < 7; i++) {
+                const y = topPadding + i * step + cellSize / 2 + 3;
+                svg += '<text x="' + (leftPadding - 8) + '" y="' + y + '" class="day-label" text-anchor="end">' + weekdays[i] + '</text>';
+            }
+
+            // 逐日绘制格子
+            const endDate = today;
+            let lastMonthLabelX = -100;
+            let current = startWeekSunday;
+
+            while (current <= endWeekSaturday) {
+                const currentKey = toDateKey(current);
+                const inRange = current >= startDate && current <= endDate;
+                const count = inRange && counts[currentKey] ? counts[currentKey] : 0;
+                const weekNum = Math.round(dayDiff(startWeekSunday, current) / 7);
+                const weekDay = current.getDay();
+                const posX = leftPadding + weekNum * step;
+                const posY = topPadding + weekDay * step;
+                const displayDate = (current.getMonth() + 1) + '月' + current.getDate() + '日';
+
+                svg += '<rect class="contrib-cell" x="' + posX + '" y="' + posY + '" width="' + cellSize + '" height="' + cellSize + '" fill="' + (inRange ? contributionColor(count) : '#111') + '" data-count="' + count + '" data-date="' + currentKey + '" data-display-date="' + displayDate + '">'
+                    + '<title>' + displayDate + ' (' + weekdays[weekDay] + '): ' + count + ' 次提交</title>'
+                    + '</rect>';
+
+                // 月份标签
+                if ((current.getDate() === 1 && inRange) || currentKey === toDateKey(startDate)) {
+                    const labelX = posX + cellSize / 2;
+                    if (labelX - lastMonthLabelX >= 30) {
+                        svg += '<text x="' + labelX + '" y="' + (topPadding - 6) + '" class="month-label" text-anchor="middle">' + (current.getMonth() + 1) + '月</text>';
+                        lastMonthLabelX = labelX;
+                    }
+                }
+
+                current = shiftDays(current, 1);
+            }
+
+            svg += '</svg>';
+            return svg;
+        }
+
+        function updateGitHubChartInfo(fetchedAt, total) {
+            const caption = document.getElementById('github-chart-caption');
+            if (!caption) return;
+            const diffHours = Math.floor((Date.now() - fetchedAt) / 3600000);
+            let updateText = '数据已缓存';
+            if (diffHours < 1) {
+                updateText = '数据刚刚更新';
+            } else if (diffHours === 1) {
+                updateText = '数据1小时前更新';
+            } else if (diffHours < 24) {
+                updateText = '数据' + diffHours + '小时前更新';
+            } else {
+                updateText = '数据' + Math.floor(diffHours / 24) + '天前更新';
+            }
+            const username = CONFIG.github_username || '';
+            caption.innerHTML = updateText + ' · 共' + total + '次提交 · ' + username + "'s Github chart";
+        }
+
+        // 5. 加载 GitHub 贡献图
         function loadGitHubChart() {
             const container = document.getElementById('github-chart-container');
-            const caption = document.getElementById('github-chart-caption');
-            
             if (!container) return;
-            
-            fetch('github_contributions.php?format=svg&t=' + new Date().getTime())
-                .then(response => {
-                    if (!response.ok) throw new Error('HTTP ' + response.status);
-                    return response.text();
-                })
-                .then(svgText => {
-                    container.innerHTML = svgText;
-                    updateGitHubChartInfo();
-                    
+
+            if (!CONFIG.github_username) {
+                console.warn('[GitHub 贡献图] ⚠️ 未配置 github_username，跳过');
+                return;
+            }
+
+            fetchContributions()
+                .then(entry => {
+                    container.innerHTML = buildContributionsSVG(entry.data);
+                    updateGitHubChartInfo(entry.fetchedAt, entry.data.total);
+
                     const svgElement = container.querySelector('svg');
                     if (svgElement) {
                         svgElement.style.maxWidth = '100%';
@@ -1166,13 +1294,15 @@
                     }
 
                     setupChartTouch(container);
-                    console.log('[GitHub 贡献图] ✅ 加载成功');
+                    console.log('[GitHub 贡献图] ✅ 加载成功 | 共' + entry.data.total + '次提交');
                 })
                 .catch(error => {
                     console.error('[GitHub 贡献图] ❌ 加载失败，使用备用图片:', error.message);
-                    container.innerHTML = `<img src="https://ghchart.rshah.org/${github_username}" alt="GitHub Contributions" style="width:100%; border-radius:12px;">`;
+                    const username = CONFIG.github_username || '';
+                    container.innerHTML = '<img class="github-chart-img" src="https://ghchart.rshah.org/' + username + '" alt="GitHub Contributions">';
+                    const caption = document.getElementById('github-chart-caption');
                     if (caption) {
-                        caption.innerHTML = `数据加载失败，使用备用图表 · ${github_username}'s Github chart`;
+                        caption.innerHTML = '数据加载失败，使用备用图表 · ' + username + "'s Github chart";
                     }
                 });
         }
@@ -1452,11 +1582,11 @@
 
         // 调试信息
         console.log('========== API 初始化 ==========');
-        console.log('[系统状态] ' + (CONFIG.komariApiUrl ? 'Komari (' + CONFIG.komariApiUrl + ')' : 'status.php (本地)'));
-        console.log('[续费信息] ' + (CONFIG.komariApiUrl ? 'Komari (' + CONFIG.komariNodeUuid + ')' : 'status.php (本地)'));
+        console.log('[系统状态] ' + (CONFIG.komariApiUrl ? 'Komari 直连 (' + CONFIG.komariApiUrl + ')' : '❌ 未配置'));
+        console.log('[续费信息] ' + (CONFIG.komariApiUrl ? 'Komari (' + CONFIG.komariNodeUuid + ')' : '❌ 未配置'));
         console.log('[天气] ' + (CONFIG.qweatherKey ? '已配置 (和风+高德)' : '❌ 未配置'));
         console.log('[一言] ' + '已启用 (hitokoto.cn)');
-        console.log('[GitHub] ' + '已启用 (github_contributions.php)');
+        console.log('[GitHub] ' + (CONFIG.github_username ? '已启用 (前端直连 + 本地缓存)' : '❌ 未配置'));
         console.log('[说说] ' + (CONFIG.echoApiUrl ? '已配置 (' + CONFIG.echoApiUrl + ')' : '❌ 未配置'));
         console.log('[运行时间] ' + (CONFIG.up_date ? '起始: ' + CONFIG.up_date : '❌ 未配置'));
         console.log('===============================');
@@ -1481,6 +1611,7 @@
 
         // 更新历史时间轴数据
         var timelineData = [
+            { date: '2026.10.22', text: '移除全部 PHP 脚本，GitHub 贡献图改为前端直连 + 本地缓存，全站纯静态' },
             { date: '2026.07.14', text: '接入 Komari 系统监控，替换本地 status.php；新增 API 调试日志' },
             { date: '2026.07.14', text: '一言功能优化：显示来源出处、内容左对齐来源右对齐' },
             { date: '2026.07.14', text: '字体大小配置项提取到 config.js（名字/简介/一言/页面缩放）' },
